@@ -2,6 +2,7 @@ import { API_BASE_URL } from './config'
 
 interface RequestOptions extends RequestInit {
     headers?: Record<string, string>
+    responseType?: 'json' | 'text'
 }
 
 class HttpClient {
@@ -40,7 +41,8 @@ class HttpClient {
                 return {} as T
             }
 
-            return await response.json()
+            const responseType = options.responseType || 'json'
+            return responseType === 'json' ? await response.json() : await response.text() as unknown as T
         } catch (error) {
             console.error('API Request Failed:', error)
             throw error
@@ -56,6 +58,15 @@ class HttpClient {
             ...options,
             method: 'POST',
             body: JSON.stringify(body),
+        })
+    }
+
+    postText<T>(endpoint: string, body: any, options?: RequestOptions) {
+        return this.request<T>(endpoint, {
+            ...options,
+            method: 'POST',
+            body: JSON.stringify(body),
+            responseType: 'text'
         })
     }
 

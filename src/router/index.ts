@@ -17,6 +17,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/video-generation',
+      name: 'video-generation',
+      component: () => import('../views/video/VideoChatView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/',
       redirect: '/login',
     },

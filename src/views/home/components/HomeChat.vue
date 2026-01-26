@@ -17,7 +17,7 @@
               :src="message.role === 'user' ? personIcon : magnoliaLogo"
               :name="message.role === 'user' ? 'User' : 'Magnolia'"
             />
-            <div v-if="message.image" class="home-chat__image-container">
+            <div v-if="message.image" class="home-chat__image-container" @click="startVideoGeneration(message.image)">
               <img :src="message.image" alt="Generated Image" class="home-chat__generated-image" />
               <div class="home-chat__overlay">
                 <div class="home-chat__overlay-icon">
@@ -77,6 +77,8 @@
 
 <script setup lang="ts">
 import { useChatStore } from '@/stores/chat/chat'
+import { useVideoStore } from '@/stores/video/video'
+import { useRouter } from 'vue-router'
 import { Message, MessageContent, MessageAvatar } from '@/components/ai-elements/message'
 import AppButton from '@/components/buttons/AppButton.vue'
 import personIcon from '@/assets/icons/person.png'
@@ -84,6 +86,13 @@ import magnoliaLogo from '@/assets/logo-no-bg.png'
 import { Check } from 'lucide-vue-next'
 
 const chatStore = useChatStore()
+const videoStore = useVideoStore()
+const router = useRouter()
+
+const startVideoGeneration = (image: string) => {
+  videoStore.setContextImage(image)
+  router.push({ name: 'video-generation' })
+}
 </script>
 
 <style lang="scss" scoped>
@@ -194,11 +203,15 @@ const chatStore = useChatStore()
   }
 
   &__image-container {
-    @apply mt-2 relative group inline-block cursor-pointer;
+    @apply mt-2 relative inline-block cursor-pointer;
+
+    &:hover .home-chat__overlay {
+      @apply opacity-100;
+    }
   }
 
   &__overlay {
-    @apply absolute inset-0 bg-black/10 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg backdrop-blur-[1px];
+    @apply absolute inset-0 bg-black/10 flex flex-col items-center justify-center opacity-0 transition-opacity duration-300 rounded-lg backdrop-blur-[1px];
   }
 
   &__overlay-icon {
