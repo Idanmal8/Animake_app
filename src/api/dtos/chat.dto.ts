@@ -1,5 +1,6 @@
 export interface GenerateImageRequest {
   prompt: string
+  image?: string // Base64 string of the image to edit
 }
 
 export interface GenerateImageResponse {

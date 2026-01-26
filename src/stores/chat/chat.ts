@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { Chat } from '@ai-sdk/vue'
 import { ref, computed } from 'vue'
 import { chatService } from '@/api/services/chat'
+import { compressImage } from '@/lib/imageUtils'
 
 export const useChatStore = defineStore('chat', () => {
   const input = ref('')
@@ -37,9 +38,14 @@ export const useChatStore = defineStore('chat', () => {
   const error = computed(() => chat.error)
   const isLoading = computed(() => chat.status === 'streaming' || chat.status === 'submitted')
   
-  const generateImage = async (prompt: string) => {
+  const generateImage = async (prompt: string, image?: string) => {
     try {
-      const response = await chatService.generateImage(prompt)
+      // Strip prefix if it exists: "data:image/jpeg;base64,XXXX" -> "XXXX"
+      const base64Data = image?.includes('base64,') 
+        ? image.split('base64,')[1] 
+        : image;
+
+      const response = await chatService.generateImage(prompt, base64Data)
       return `data:${response.mimeType};base64,${response.data}`
     } catch (err) {
       console.error('Failed to generate image:', err)
@@ -65,7 +71,24 @@ export const useChatStore = defineStore('chat', () => {
 
     // Generate image
     try {
-      const imageUrl = await generateImage(value)
+      // Find the last generated image to use as context for editing
+      const lastImageMessage = [...localMessages.value]
+        .reverse()
+        .find(m => m.role === 'assistant' && m.image)
+      
+      const lastImage = lastImageMessage?.image
+      
+      let imageToSend = lastImage
+      if (lastImage) {
+        try {
+          // Compress the image before sending to avoid payload size limits
+          imageToSend = await compressImage(lastImage)
+        } catch (e) {
+          console.warn('Failed to compress image, sending original:', e)
+        }
+      }
+
+      const imageUrl = await generateImage(value, imageToSend)
       
       // Add assistant message with image locally
       localMessages.value.push({

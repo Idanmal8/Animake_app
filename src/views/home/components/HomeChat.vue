@@ -14,15 +14,20 @@
         <div class="home-chat__list">
           <Message v-for="message in chatStore.messages" :key="message.id" :from="message.role">
             <MessageAvatar
-              :src="message.role === 'user' ? '' : ''"
-              :name="message.role === 'user' ? 'User' : 'Assistant'"
+              :src="message.role === 'user' ? personIcon : magnoliaLogo"
+              :name="message.role === 'user' ? 'User' : 'Magnolia'"
             />
-            <div v-if="message.image" class="mt-2">
-              <img
-                :src="message.image"
-                alt="Generated Image"
-                class="rounded-lg max-w-full h-auto border border-border"
-              />
+            <div v-if="message.image" class="home-chat__image-container">
+              <img :src="message.image" alt="Generated Image" class="home-chat__generated-image" />
+              <div class="home-chat__overlay">
+                <div class="home-chat__overlay-icon">
+                  <Check class="w-5 h-5 text-white" />
+                </div>
+                <span class="home-chat__overlay-text">Continue with this image</span>
+              </div>
+            </div>
+            <div v-else-if="message.role === 'user'" class="home-chat__bubble">
+              {{ message.content }}
             </div>
             <MessageContent v-else :content="message.content" />
           </Message>
@@ -74,6 +79,9 @@
 import { useChatStore } from '@/stores/chat/chat'
 import { Message, MessageContent, MessageAvatar } from '@/components/ai-elements/message'
 import AppButton from '@/components/buttons/AppButton.vue'
+import personIcon from '@/assets/icons/person.png'
+import magnoliaLogo from '@/assets/logo-no-bg.png'
+import { Check } from 'lucide-vue-next'
 
 const chatStore = useChatStore()
 </script>
@@ -175,6 +183,30 @@ const chatStore = useChatStore()
     /* Override AppButton styles if needed for compact fit */
     height: 40px;
     padding: 0 1rem;
+  }
+
+  &__generated-image {
+    @apply rounded-lg max-w-sm h-auto border border-border;
+  }
+
+  &__bubble {
+    @apply bg-primary text-primary-foreground px-4 py-3 rounded-lg text-sm max-w-full break-words;
+  }
+
+  &__image-container {
+    @apply mt-2 relative group inline-block cursor-pointer;
+  }
+
+  &__overlay {
+    @apply absolute inset-0 bg-black/10 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg backdrop-blur-[1px];
+  }
+
+  &__overlay-icon {
+    @apply bg-primary/80 rounded-full p-2 mb-2;
+  }
+
+  &__overlay-text {
+    @apply text-white font-medium text-xs bg-black/50 px-2 py-1 rounded;
   }
 }
 </style>
