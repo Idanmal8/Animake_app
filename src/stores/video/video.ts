@@ -99,10 +99,6 @@ export const useVideoStore = defineStore('video', () => {
             parts: [{ type: 'text', text: prompt }]
         })
 
-        // Add temporary loading message or handle loading state in UI
-        // We'll let UI handle loading state via isLoading, but usually chat apps show "Generating..."
-        // For simplicity, we wait.
-
         try {
             const videoUrl = await generateVideo(prompt)
             

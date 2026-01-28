@@ -23,11 +23,7 @@ import logo from '@/assets/logo-no-bg.png'
 
 <style lang="scss" scoped>
 .home-app-bar {
-  position: fixed;
-  top: 2rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
+  width: 100%;
   max-width: 900px;
   height: 64px;
   background-color: hsl(var(--card));
@@ -35,8 +31,8 @@ import logo from '@/assets/logo-no-bg.png'
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
-  z-index: 100;
+  padding: 1rem 1rem;
+  margin-bottom: 2rem;
 
   /* Theme-aware shadow */
   box-shadow: 0 1px 10px var(--shadow-color);
@@ -57,7 +53,7 @@ import logo from '@/assets/logo-no-bg.png'
   }
 
   &__title {
-    font-family: 'PT Serif', serif;
+    font-family: 'azlando_sans_semiExpanded', sans-serif;
     font-weight: bold;
     font-size: 1.5rem;
     color: hsl(var(--foreground));

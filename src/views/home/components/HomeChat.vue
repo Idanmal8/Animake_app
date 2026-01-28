@@ -99,17 +99,16 @@ const startVideoGeneration = (image: string) => {
 .home-chat {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* height: 100%;  Removed fixed height */
   width: 100%;
-  max-width: 900px; /* Align with app bar max-width if desired, or 100% */
+  max-width: 900px; /* Align with app bar max-width */
   margin: 0 auto;
   position: relative;
-  padding-top: 80px; /* Space for fixed app bar */
   padding-bottom: 2rem;
 
   &__messages {
     flex: 1;
-    overflow-y: auto;
+    /* overflow-y: auto; Removed internal scrolling */
     padding: 1rem;
     display: flex;
     flex-direction: column;
