@@ -49,9 +49,13 @@ const togglePreviewLoop = () => {
     }
 }
 
+const emit = defineEmits<{
+    (e: 'continue'): void
+}>()
+
 const handleContinue = () => {
-    // Placeholder for next step
-    console.log("Continue with trim:", store.startTime, store.endTime)
+    console.log('continue')
+    emit('continue')
 }
 
 // Watch play state to handle pause from native controls
