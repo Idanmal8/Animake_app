@@ -26,6 +26,10 @@ const processCurrentFrame = async () => {
     if (currentFrameIndex.value >= selected.length) currentFrameIndex.value = 0
     const frame = selected[currentFrameIndex.value]
     if (!frame) return
+    if (!frame.dataUrl || frame.dataUrl.length < 100) {
+        console.warn("[Client] Invalid frame dataUrl", frame);
+        return;
+    }
 
     const img = new Image()
     img.onload = async () => {

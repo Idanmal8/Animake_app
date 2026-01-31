@@ -56,6 +56,18 @@ export const useVectorizationStore = defineStore('vectorization', () => {
        if (!ctx) throw new Error("Canvas context creation failed")
        
        ctx.putImageData(imageData, 0, 0)
+
+       // DEBUG: Check for empty image before sending
+       const debugData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+       let nonTransparentCount = 0;
+       for (let i = 3; i < debugData.length; i += 4) {
+           if ((debugData[i] ?? 0) > 10) nonTransparentCount++;
+       }
+       console.log(`[Client] traceFrame: ${nonTransparentCount} non-transparent pixels out of ${canvas.width * canvas.height} (${((nonTransparentCount / (canvas.width * canvas.height)) * 100).toFixed(2)}%)`);
+
+       if (nonTransparentCount === 0) {
+           console.warn("[Client] Warning: Sending completely transparent frame!");
+       }
        
        return new Promise((resolve, reject) => {
            canvas.toBlob(async (blob) => {
@@ -125,7 +137,7 @@ export const useVectorizationStore = defineStore('vectorization', () => {
                 shapes: shapes, // These are the groups returned by worker
                 ip: frameIndex,
                 op: frameIndex + 1,
-                st: frameIndex,
+                st: 0, // Fix: Start time should be 0, ip/op handles visibility
                 bm: 0
             })
         })
@@ -140,7 +152,7 @@ export const useVectorizationStore = defineStore('vectorization', () => {
             nm: "Animake Export",
             ddd: 0,
             assets: [],
-            layers: layers.reverse(), // Top layer is first in array
+            layers: layers, // Top layer is last in array for Lottie (render order)
             markers: []
         }
     }
