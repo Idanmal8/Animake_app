@@ -1,3 +1,4 @@
 export { default as LoginView } from '../views/login/LoginView.vue'
 export { default as HomeView } from '../views/home/HomeView.vue'
 export { default as VideoChatView } from '../views/video_creation/VideoChatView.vue'
+export { default as LottiePreview } from '../views/lottie_preview/LottiePreview.vue'

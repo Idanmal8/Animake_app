@@ -10,8 +10,18 @@ class HttpClient {
         const url = `${API_BASE_URL}${endpoint}`
 
         const headers: Record<string, string> = {
+            // Default to json, but allow overriding/removing by passing null or different value
             'Content-Type': 'application/json',
             ...options.headers,
+        }
+        
+        // If Content-Type is set to 'undefined' string or null by caller, delete it
+        // Note: In TS Record<string, string>, strictly we expect strings.
+        // But we can check if the key exists and if we want to remove it.
+        // Actually, easiest way: if body is FormData, remove Content-Type.
+        
+        if (options.body instanceof FormData) {
+            delete headers['Content-Type']
         }
 
         const token = localStorage.getItem('token')
@@ -58,6 +68,27 @@ class HttpClient {
             ...options,
             method: 'POST',
             body: JSON.stringify(body),
+        })
+    }
+
+    postFormData<T>(endpoint: string, formData: FormData, options?: RequestOptions) {
+        // Headers are handled tricky here. If we set Content-Type to multipart/form-data manually,
+        // we lose the boundary. We must NOT set it.
+        // But request() sets 'Content-Type': 'application/json' by default.
+        // We need a way to bypass that.
+        
+        const { headers, ...restOptions } = options || {}
+        
+        return this.request<T>(endpoint, {
+            ...restOptions,
+            headers: {
+                ...headers,
+                // Explicitly remove Content-Type to let browser handle it (with boundary)
+                // However, our request() method forces application/json. 
+                // We need to modify request() to respect an overwrite or null.
+            },
+            method: 'POST',
+            body: formData,
         })
     }
 

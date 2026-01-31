@@ -22,6 +22,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/lottie-preview',
+      name: 'lottie-preview',
+      component: routes.LottiePreview,
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/',
       redirect: '/login',
     },

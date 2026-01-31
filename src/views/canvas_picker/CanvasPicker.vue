@@ -5,10 +5,12 @@ import { useVideoFramesStore } from '@/stores/video_frames/video_frames'
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import GIF from 'gif.js'
+import { useRouter } from 'vue-router'
 
 const canvasStore = useCanvasPickerStore()
 const chromaStore = useChromaKeyStore()
 const framesStore = useVideoFramesStore()
+const router = useRouter()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const previewInterval = ref<number | null>(null)
@@ -207,6 +209,12 @@ onUnmounted(() => {
                 variant="primary" 
                 @click="downloadGIF" 
                 :disabled="!areImagesLoaded || isGenerating"
+            />
+             <AppButton 
+                title="Vector Preview"
+                variant="secondary" 
+                @click="router.push({ name: 'lottie-preview' })" 
+                :disabled="!areImagesLoaded"
             />
         </div>
     </div>
