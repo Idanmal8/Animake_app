@@ -4,11 +4,12 @@
     :disabled="disabled || loading"
     class="app-button"
     :style="{
-      backgroundColor: color,
-      color: textColor,
-      borderColor: borderColor,
+      backgroundColor: finalColor,
+      color: finalTextColor,
+      borderColor: finalBorderColor,
       minWidth: minWidth,
     }"
+    :class="variant"
   >
     <div v-if="loading" class="spinner"></div>
     <div v-else class="content">
@@ -25,6 +26,8 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
+
 interface Props {
   title: string
   icon?: string
@@ -36,17 +39,44 @@ interface Props {
   disabled?: boolean
   minWidth?: string
   maxWidth?: string
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive'
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  color: '#000000',
-  textColor: '#ffffff',
-  borderColor: 'transparent',
   type: 'button',
   disabled: false,
-  minWidth: '400px',
+  minWidth: 'var(--button-min-width, 140px)', // use css var or sensible default
   maxWidth: '400px',
+  variant: 'primary'
+})
+
+const finalColor = computed(() => {
+    if (props.color) return props.color
+    switch (props.variant) {
+        case 'secondary': return 'hsl(var(--secondary))'
+        case 'ghost': return 'transparent'
+        case 'outline': return 'transparent' // Background
+        case 'destructive': return 'hsl(var(--destructive))'
+        default: return 'hsl(var(--primary))'
+    }
+})
+
+const finalTextColor = computed(() => {
+    if (props.textColor) return props.textColor
+    switch (props.variant) {
+        case 'secondary': return 'hsl(var(--secondary-foreground))'
+        case 'ghost': return 'hsl(var(--foreground))'
+        case 'outline': return 'hsl(var(--foreground))'
+        case 'destructive': return 'hsl(var(--destructive-foreground))'
+        default: return 'hsl(var(--primary-foreground))'
+    }
+})
+
+const finalBorderColor = computed(() => {
+    if (props.borderColor) return props.borderColor
+    if (props.variant === 'outline') return 'hsl(var(--border))'
+    return 'transparent'
 })
 </script>
 
@@ -62,11 +92,25 @@ withDefaults(defineProps<Props>(), {
   display: flex;
   justify-content: center;
   align-items: center;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
+  }
+  
+  /* Hover effects based on variant */
+  &.ghost:hover {
+      background-color: hsl(var(--muted)) !important;
+  }
+  &.outline:hover {
+      background-color: hsl(var(--accent)) !important;
+  }
+  &.primary:hover {
+      opacity: 0.9;
+  }
+  &.secondary:hover {
+       filter: brightness(0.95);
   }
 }
 
@@ -97,10 +141,10 @@ withDefaults(defineProps<Props>(), {
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid currentColor; /* Use current text color for spinner */
+  border-right-color: transparent;
   border-radius: 50%;
-  border-top-color: currentColor;
-  animation: spin 1s ease-in-out infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {

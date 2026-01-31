@@ -11,6 +11,10 @@ export const useVideoUploadStore = defineStore('videoUpload', () => {
   const endTime = ref(0)
   const isPlayingPreview = ref(false)
 
+  // Cropping State
+  const isCropped = ref(false) // Toggle 1:1 crop
+  const cropOffset = ref(50)   // 0 = Left, 50 = Center, 100 = Right
+
   const uploadVideo = (file: File) => {
     // Revoke previous URL if exists to prevent memory leaks
     if (thumbnailUrl.value) {
@@ -64,6 +68,8 @@ export const useVideoUploadStore = defineStore('videoUpload', () => {
     startTime,
     endTime,
     isPlayingPreview,
+    isCropped,
+    cropOffset,
     uploadVideo,
     setDuration,
     setTrim,

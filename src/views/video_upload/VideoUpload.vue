@@ -4,16 +4,39 @@ import StepsGuide from './components/StepsGuide.vue'
 import RangeSlider from '@/components/inputs/RangeSlider.vue'
 import AppButton from '@/components/buttons/AppButton.vue' // Assuming AppButton exists
 import { useVideoUploadStore } from '@/stores/video_upload/video_upload'
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 
 const store = useVideoUploadStore()
 const videoRef = ref<HTMLVideoElement | null>(null)
 
+const aspectRatio = ref(1.77) // Default 16:9
+
 const onLoadedMetadata = () => {
   if (videoRef.value) {
     store.setDuration(videoRef.value.duration)
+    aspectRatio.value = videoRef.value.videoWidth / videoRef.value.videoHeight
   }
 }
+
+// Compute the 'left' percentage for the square crop box
+const cropLeftPercent = computed(() => {
+    if (aspectRatio.value <= 1) return 0 // Portrait/Square: No horizontal movement (maybe vertical later?)
+    
+    // Width of square in % of video width = (1 / AR) * 100
+    const squareWidthPercent = (1 / aspectRatio.value) * 100
+    
+    // Available space to move = 100% - SquareWidth
+    const availableSpace = 100 - squareWidthPercent
+    
+    // Position based on offset (0-100)
+    return (store.cropOffset / 100) * availableSpace
+})
+
+// Compute the width of the square in %
+const cropWidthPercent = computed(() => {
+    if (aspectRatio.value <= 1) return 100 
+    return (1 / aspectRatio.value) * 100
+})
 
 const onTimeUpdate = () => {
     if (!videoRef.value || !store.isPlayingPreview) return
@@ -85,6 +108,17 @@ watch(() => store.isPlayingPreview, (isPlaying) => {
                         @loadedmetadata="onLoadedMetadata"
                         @timeupdate="onTimeUpdate"
                     />
+                    
+                    <!-- Crop Overlay -->
+                    <div class="crop-overlay" v-if="store.isCropped">
+                         <div 
+                            class="crop-box"
+                            :style="{ 
+                                left: `${cropLeftPercent}%`, 
+                                width: `${cropWidthPercent}%` 
+                            }"
+                         ></div>
+                    </div>
                 </div>
 
                 <div class="trim-controls" v-if="store.duration > 0">
@@ -111,6 +145,25 @@ watch(() => store.isPlayingPreview, (isPlaying) => {
                         />
                     </div>
                 </div>
+                
+                <!-- Crop Controls -->
+                <div class="crop-controls">
+                    <label class="crop-toggle">
+                        <input type="checkbox" v-model="store.isCropped">
+                        <span class="label-text">Crop to Square (1:1)</span>
+                    </label>
+                    
+                    <div class="crop-slider" v-if="store.isCropped">
+                        <span class="label-text">Position</span>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="100" 
+                            v-model.number="store.cropOffset"
+                        >
+                    </div>
+                </div>
+
 
                 <!-- Temporary Reset Button moved to bottom/removed in favor of proper flow if needed, 
                      but keeping simple reset logic accessible for dev/demo -->
@@ -182,5 +235,64 @@ watch(() => store.isPlayingPreview, (isPlaying) => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.video-wrapper {
+    position: relative; /* Context for overlay */
+    /* ... existing ... */
+}
+
+.crop-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Let clicks pass through to video controls if needed, or handle custom dragging */
+}
+
+.crop-box {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    /* Width set by inline style */
+    border: 2px solid white;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7); /* Dim everything else */
+    pointer-events: auto; /* Maybe allow dragging here in future? */
+}
+
+.crop-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: hsl(var(--card));
+    border-radius: 8px;
+    border: 1px solid hsl(var(--border));
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.crop-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.crop-slider {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    max-width: 300px;
+}
+
+.label-text {
+    font-size: 0.9rem;
 }
 </style>

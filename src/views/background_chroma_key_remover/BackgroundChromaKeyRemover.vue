@@ -10,6 +10,7 @@ const framesStore = useVideoFramesStore()
 
 const emit = defineEmits<{
   (e: 'continue'): void
+  (e: 'back'): void
 }>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -177,11 +178,18 @@ const handleCanvasClick = (e: MouseEvent) => {
         </div>
         
         <div class="background-chroma-key-remover__continue-btn">
-             <AppButton 
-                title="Continue"
-                variant="primary" 
-                @click="$emit('continue')" 
-            />
+             <div class="flex gap-4">
+                <AppButton 
+                    title="Back"
+                    variant="ghost" 
+                    @click="$emit('back')" 
+                />
+                 <AppButton 
+                    title="Continue"
+                    variant="primary" 
+                    @click="$emit('continue')" 
+                />
+             </div>
         </div>
     </div>
 </template>

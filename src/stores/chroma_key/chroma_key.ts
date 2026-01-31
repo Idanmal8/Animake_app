@@ -7,7 +7,7 @@ export const useChromaKeyStore = defineStore('chromaKey', () => {
     
     // Default green screen color
     const targetColor = ref('#00FF00')
-    const tolerance = ref(30) // 0-100
+    const tolerance = ref(10) // 0-100
     const isProcessing = ref(false)
     
     // We might need to store processed versions of frames, 

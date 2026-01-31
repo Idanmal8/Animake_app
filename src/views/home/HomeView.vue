@@ -20,6 +20,18 @@ const handleContinueToChromaKey = () => {
 const handleContinueToCanvasPicker = () => {
     currentStep.value = 'canvas-picker'
 }
+
+const handleBackToUpload = () => {
+    currentStep.value = 'upload'
+}
+
+const handleBackToSlicing = () => {
+    currentStep.value = 'slicing'
+}
+
+const handleBackToChromaKey = () => {
+    currentStep.value = 'chroma-key'
+}
 </script>
 
 <template>
@@ -38,12 +50,17 @@ const handleContinueToCanvasPicker = () => {
            <VideoFramesSlicing 
                 v-else-if="currentStep === 'slicing'" 
                 @continue="handleContinueToChromaKey"
+                @back="handleBackToUpload"
            />
            <BackgroundChromaKeyRemover 
                 v-else-if="currentStep === 'chroma-key'" 
                 @continue="handleContinueToCanvasPicker"
+                @back="handleBackToSlicing"
             />
-           <CanvasPicker v-else-if="currentStep === 'canvas-picker'" />
+           <CanvasPicker 
+                v-else-if="currentStep === 'canvas-picker'"
+                @back="handleBackToChromaKey"
+            />
        </Transition>
     </main>
   </div>

@@ -50,10 +50,29 @@ export const useVideoFramesStore = defineStore('videoFrames', () => {
         return
     }
 
-    // Set canvas dimensions to match video (or scaled down for performance?)
-    // Using full resolution for now, can optimize later
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    // Crop Logic
+    const isCropped = uploadStore.isCropped
+    const cropOffset = uploadStore.cropOffset
+    
+    let sourceX = 0
+    let sourceY = 0
+    let sourceWidth = video.videoWidth
+    let sourceHeight = video.videoHeight
+    
+    // If cropping is enabled and video is wider than tall (Landscape)
+    if (isCropped && sourceWidth > sourceHeight) {
+        // 1:1 Crop
+        sourceWidth = sourceHeight // Square
+        const maxOffset = video.videoWidth - sourceWidth
+        sourceX = maxOffset * (cropOffset / 100)
+    } 
+    // Handle Portrait? (height > width). Usually just center crop or top/bottom?
+    // User asked for 16:9 to 1:1, implying landscape loop.
+    // For now, only crop landscape.
+    
+    // Canvas Size
+    canvas.width = sourceWidth
+    canvas.height = sourceHeight
 
     let currentTime = start
     let frameId = 0
@@ -77,8 +96,12 @@ export const useVideoFramesStore = defineStore('videoFrames', () => {
              video.addEventListener('seeked', onSeeked)
         })
 
-        // Draw
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+        // Draw cropped region
+        ctx.drawImage(
+            video, 
+            sourceX, sourceY, sourceWidth, sourceHeight, // Source
+            0, 0, canvas.width, canvas.height            // Destination
+        )
         
         // Save
         frames.value.push({

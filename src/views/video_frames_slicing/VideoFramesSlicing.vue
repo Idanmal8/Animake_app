@@ -6,9 +6,11 @@ import { Play, Pause, ZoomIn, ZoomOut, CheckSquare, Square } from 'lucide-vue-ne
 
 const store = useVideoFramesStore()
 const previewInterval = ref<number | null>(null)
+const localFps = ref(store.fps)
 
 const emit = defineEmits<{
   (e: 'continue'): void
+  (e: 'back'): void
 }>()
 
 // Generate frames on mount (triggered by navigation from previous step)
@@ -133,38 +135,44 @@ watch(() => store.isGenerating, (val) => {
             </div>
 
             <!-- Playback Tools & Continue -->
-            <div class="video-tools">
-                <div class="video-tools__left">
-                     <!-- Spacer or additional tools -->
-                </div>
-
-                <div class="video-tools__center">
-                     <button class="play-button" @click="togglePlay">
-                        <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current" />
-                        <Play v-else class="w-6 h-6 fill-current pl-1" />
-                    </button>
-                    
-                    <div class="fps-control">
-                        <span class="fps-label">FPS: {{ store.fps }}</span>
-                        <input 
-                            type="range" 
-                            min="24" 
-                            max="60" 
-                            step="1" 
-                            :value="store.fps" 
-                            @change="(e) => store.setFps(Number((e.target as HTMLInputElement).value))"
-                        />
-                    </div>
-                </div>
-
+            <div class="video-tools__left">
+                 <!-- Spacer -->
             </div>
+
+            <div class="video-tools__center">
+                    <button class="play-button" @click="togglePlay">
+                    <Pause v-if="store.isPlaying" class="w-6 h-6 fill-current" />
+                    <Play v-else class="w-6 h-6 fill-current pl-1" />
+                </button>
+                
+                <div class="fps-control">
+                    <span class="fps-label">FPS: {{ localFps }}</span>
+                    <input 
+                        type="range" 
+                        min="24" 
+                        max="60" 
+                        step="1" 
+                        :value="localFps" 
+                        @input="(e) => localFps = Number((e.target as HTMLInputElement).value)"
+                        @change="store.setFps(localFps)"
+                    />
+                </div>
+            </div>
+
             <div class="video-tools__right">
-                <AppButton 
-                    title="Continue"
-                    variant="primary" 
-                    @click="$emit('continue')" 
-                    :disabled="store.selectedFrames.length === 0"
-                />
+                <div class="flex gap-4">
+                     <AppButton 
+                        title="Back"
+                        variant="ghost" 
+                        @click="$emit('back')" 
+                    />
+                    <AppButton 
+                        title="Continue"
+                        variant="primary" 
+                        @click="$emit('continue')" 
+                        :disabled="store.selectedFrames.length === 0"
+                    />
+                </div>
             </div>
         </div>
     </div>
@@ -358,6 +366,7 @@ watch(() => store.isGenerating, (val) => {
 
 .video-tools__center {
     display: flex;
+    justify-content: center;
     align-items: center;
     gap: 2rem;
 }
