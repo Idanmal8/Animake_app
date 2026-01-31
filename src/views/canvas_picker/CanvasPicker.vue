@@ -211,9 +211,9 @@ onUnmounted(() => {
                 :disabled="!areImagesLoaded || isGenerating"
             />
              <AppButton 
-                title="Vector Preview"
+                title="Sprite Sheet"
                 variant="secondary" 
-                @click="router.push({ name: 'lottie-preview' })" 
+                @click="router.push({ name: 'sprite-preview' })" 
                 :disabled="!areImagesLoaded"
             />
         </div>

@@ -22,9 +22,9 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
-      path: '/lottie-preview',
-      name: 'lottie-preview',
-      component: routes.LottiePreview,
+      path: '/sprite-preview',
+      name: 'sprite-preview',
+      component: routes.SpritePreview,
       meta: { requiresAuth: true },
     },
     {

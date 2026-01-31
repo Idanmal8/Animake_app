@@ -2,15 +2,14 @@
 import { useCanvasPickerStore } from '@/stores/canvas_picker/canvas_picker'
 import { useChromaKeyStore } from '@/stores/chroma_key/chroma_key'
 import { useVideoFramesStore } from '@/stores/video_frames/video_frames'
-import { useVectorizationStore, type VectorRect } from '@/stores/vectorization/vectorization'
+import { useSpritesStore } from '@/stores/sprites/sprites'
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import AppButton from '@/components/buttons/AppButton.vue'
-import { DotLottie } from '@dotlottie/dotlottie-js'
 
 const canvasStore = useCanvasPickerStore()
 const chromaStore = useChromaKeyStore()
 const framesStore = useVideoFramesStore()
-const vectorStore = useVectorizationStore()
+const spritesStore = useSpritesStore()
 
 const currentFrameIndex = ref(0)
 const previewInterval = ref<number | null>(null)
@@ -59,7 +58,7 @@ const processCurrentFrame = async () => {
     img.src = frame.dataUrl
 }
 
-const downloadLottie = async () => {
+const downloadSpriteSheet = async () => {
     if (isGenerating.value) return
     isGenerating.value = true
     stopPreview()
@@ -67,10 +66,9 @@ const downloadLottie = async () => {
     try {
         const selected = framesStore.selectedFrames
         const size = canvasStore.selectedSize
-        const allFramesShapes: any[][] = []
+        const allFramesData: ImageData[] = []
 
         // Process all frames locally
-        // We can reuse the same canvas
         const tempCanvas = document.createElement('canvas')
         tempCanvas.width = size
         tempCanvas.height = size
@@ -78,8 +76,7 @@ const downloadLottie = async () => {
         if (!ctx) throw new Error("Canvas context failed")
         ctx.imageSmoothingEnabled = false
 
-        // Load images sequentially with UI yielding
-        // Load images sequentially with UI yielding and Progress Tracking
+        // Load images sequentially
         for (let i = 0; i < selected.length; i++) {
             const frame = selected[i]
             
@@ -97,6 +94,7 @@ const downloadLottie = async () => {
                         chromaStore.processFrameData(ctx, size, size)
                         
                         const imageData = ctx.getImageData(0, 0, size, size)
+                        allFramesData.push(imageData)
                         
                         // Update Visual Preview (Raster)
                         currentSvgPreview.value = tempCanvas.toDataURL("image/png")
@@ -104,10 +102,6 @@ const downloadLottie = async () => {
                         // MANDATORY: Give the browser a moment to render UI
                         await new Promise(r => setTimeout(r, 10))
 
-                        // Trace
-                        const shapes = await vectorStore.traceFrame(imageData)
-                        allFramesShapes.push(shapes)
-                        
                         resolve()
                     } catch (e) {
                          reject(e)
@@ -118,28 +112,21 @@ const downloadLottie = async () => {
             })
         }
 
-        const lottieData = vectorStore.generateLottieJSON(allFramesShapes, framesStore.fps, size, size)
+        const { imageUrl, metadata } = await spritesStore.generateSpriteSheet(allFramesData, framesStore.fps)
         
-        let blob: Blob
-        let filename: string
-
-        // Force JSON Download
-        blob = new Blob([JSON.stringify(lottieData)], { type: 'application/json' })
-        filename = 'animake_export.json'
-        
-        // Download
-        const url = URL.createObjectURL(blob)
+        // Download Image
         const a = document.createElement('a')
-        a.href = url
-        a.download = filename
+        a.href = imageUrl
+        a.download = `sprite_sheet_${metadata.cols}x${metadata.rows}.png`
         document.body.appendChild(a)
         a.click()
         document.body.removeChild(a)
-        URL.revokeObjectURL(url)
+        
+        console.log("Sprite Sheet Generated:", metadata)
 
     } catch (e) {
-        console.error("Lottie generation failed", e)
-        alert("Failed to generate Lottie: " + e)
+        console.error("Sprite sheet generation failed", e)
+        alert("Failed to generate Sprite Sheet: " + e)
     } finally {
         isGenerating.value = false
         startPreview()
@@ -180,10 +167,9 @@ const viewBox = computed(() => `0 0 ${canvasStore.selectedSize} ${canvasStore.se
 <template>
     <div class="lottie-preview">
         <div class="header">
-            <div class="title">Vector Preview</div>
+            <div class="title">Sprite Sheet Preview</div>
             <div class="description">
-                Converted to SVG shapes (Path Tracing Mode).
-                This is how the Lottie file will be constructed.
+                Generate a single Grid Layout image for game engines.
             </div>
         </div>
 
@@ -198,9 +184,9 @@ const viewBox = computed(() => `0 0 ${canvasStore.selectedSize} ${canvasStore.se
             <div v-if="isGenerating" class="processing-overlay">
                 <div class="spinner"></div>
                 <div class="status-text">
-                    Vectorizing Frame {{ currentFrameIndex + 1 }} / {{ framesStore.selectedFrames.length }}
+                    Processing Frame {{ currentFrameIndex + 1 }} / {{ framesStore.selectedFrames.length }}
                     <br>
-                    <span class="sub-text">Processing on Backend...</span>
+                    <span class="sub-text">Stitching Sprite Sheet...</span>
                 </div>
             </div>
 
@@ -209,11 +195,11 @@ const viewBox = computed(() => `0 0 ${canvasStore.selectedSize} ${canvasStore.se
 
         <div class="actions">
              <AppButton 
-                :title="isGenerating ? 'Generating JSON...' : 'Download Lottie JSON'"
+                :title="isGenerating ? 'Generating...' : 'Download Sprite Sheet'"
                 variant="primary" 
                 :disabled="isGenerating"
                 :loading="isGenerating"
-                @click="downloadLottie"
+                @click="downloadSpriteSheet"
             />
         </div>
     </div>
