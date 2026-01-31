@@ -21,7 +21,7 @@ export const useVideoFramesStore = defineStore('videoFrames', () => {
 
   const selectedFrames = computed(() => frames.value.filter(f => f.selected))
 
-  const generateFrames = async () => {
+  const generateFrames = async (excludedIntervals: {start: number, end: number}[] = []) => {
     if (!uploadStore.videoFile) return
 
     isGenerating.value = true
@@ -103,12 +103,25 @@ export const useVideoFramesStore = defineStore('videoFrames', () => {
             0, 0, canvas.width, canvas.height            // Destination
         )
         
+        // Determine selection status
+        let isSelected = true
+        if (excludedIntervals.length > 0) {
+            const frameStart = currentTime
+            const frameEnd = currentTime + interval
+            const frameCenter = frameStart + (interval / 2)
+            
+            // Check if this frame center falls into any excluded interval
+            // Simple check: if the center of the new frame was "excluded" in the old timeline
+            const isExcluded = excludedIntervals.some(ex => frameCenter >= ex.start && frameCenter < ex.end)
+            if (isExcluded) isSelected = false
+        }
+        
         // Save
         frames.value.push({
             id: frameId,
             dataUrl: canvas.toDataURL('image/jpeg', 0.7), // Compress slightly
             timestamp: currentTime,
-            selected: true // Default select all?
+            selected: isSelected
         })
 
         currentTime += interval
@@ -138,9 +151,23 @@ export const useVideoFramesStore = defineStore('videoFrames', () => {
   }
   
   const setFps = (newFps: number) => {
+    // 1. Calculate currently excluded time intervals
+    // We assume each frame covers [timestamp, timestamp + 1/oldFps)
+    const oldInterval = 1 / fps.value
+    const excludedIntervals: {start: number, end: number}[] = []
+    
+    frames.value.forEach(f => {
+        if (!f.selected) {
+            excludedIntervals.push({
+                start: f.timestamp,
+                end: f.timestamp + oldInterval
+            })
+        }
+    })
+
     fps.value = newFps
-    // Regenerate frames when FPS changes
-    generateFrames()
+    // 2. Regenerate frames passing the exclusions
+    generateFrames(excludedIntervals)
   }
 
   return {
