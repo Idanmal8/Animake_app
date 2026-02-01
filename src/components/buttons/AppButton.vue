@@ -8,6 +8,7 @@
       color: finalTextColor,
       borderColor: finalBorderColor,
       minWidth: minWidth,
+      width: width,
     }"
     :class="variant"
   >
@@ -39,6 +40,7 @@ interface Props {
   disabled?: boolean
   minWidth?: string
   maxWidth?: string
+  width?: string
   variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'destructive'
 }
 

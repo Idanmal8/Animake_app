@@ -23,24 +23,30 @@
           :rules="passwordRules"
         />
       </div>
-      <AppButton
-        title="Login"
-        type="submit"
-        :loading="loading"
-        color="#000000"
-        text-color="#ffffff"
-        @click.prevent="handleLogin"
-      />
+      <div class="login-page__form-group">
+        <AppButton
+          title="Login"
+          type="submit"
+          :loading="loading"
+          color="#000000"
+          text-color="#ffffff"
+          width="100%"
+          @click.prevent="handleLogin"
+        />
+      </div>
 
-      <AppButton
-        title="Log in with Google"
-        type="button"
-        color="#ffffff"
-        text-color="#000000"
-        border-color="#ccc"
-        :icon="googleIcon"
-        @click.prevent="handleLogin"
-      />
+      <div class="login-page__form-group">
+        <AppButton
+          title="Log in with Google"
+          type="button"
+          color="#ffffff"
+          text-color="#000000"
+          border-color="#ccc"
+          :icon="googleIcon"
+          width="100%"
+          @click.prevent="handleLogin"
+        />
+      </div>
     </div>
   </div>
 </template>

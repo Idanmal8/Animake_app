@@ -1,13 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
 import HomeAppBar from '@/views/home/components/HomeAppBar.vue'
 import VideoUpload from '@/views/video_upload/VideoUpload.vue'
 import VideoFramesSlicing from '@/views/video_frames_slicing/VideoFramesSlicing.vue'
 import BackgroundChromaKeyRemover from '@/views/background_chroma_key_remover/BackgroundChromaKeyRemover.vue'
 import CanvasPicker from '@/views/canvas_picker/CanvasPicker.vue'
+import PaywallModal from '@/components/modals/PaywallModal.vue'
+import BillingModal from '@/components/modals/BillingModal.vue'
+import { subscriptionService } from '@/api/services/subscription'
+import { useLoginStore } from '@/stores/login/login'
+import { storeToRefs } from 'pinia'
+import { Loader2 } from 'lucide-vue-next'
 
+const loginStore = useLoginStore()
+const { isInitializing } = storeToRefs(loginStore)
 const currentStep = ref<'upload' | 'slicing' | 'chroma-key' | 'canvas-picker'>('upload')
+
+onMounted(() => {
+    loginStore.initialize()
+})
+const isPaywallOpen = ref(false)
+const isSubscribing = ref(false)
+const isBillingOpen = ref(false)
+const isCancelling = ref(false)
 
 const handleContinueToSlicing = () => {
     currentStep.value = 'slicing'
@@ -32,14 +48,80 @@ const handleBackToSlicing = () => {
 const handleBackToChromaKey = () => {
     currentStep.value = 'chroma-key'
 }
+
+const handleSubscribe = async (cycle: 'monthly' | 'annually') => {
+    if (!loginStore.userId) return // Should be logged in to see button? Or redirect to login
+    isSubscribing.value = true
+    try {
+        const sub = await subscriptionService.createSubscription({
+             userId: loginStore.userId,
+             cycle
+        })
+        if (sub) {
+             // Refetch subscription to ensure fresh data for billing modal
+             const freshSub = await subscriptionService.getSubscription(loginStore.userId)
+             if (freshSub) {
+                loginStore.isSubscribed = true
+                loginStore.subscription = freshSub
+                isPaywallOpen.value = false
+             }
+        }
+    } catch (error) {
+        console.error('Subscription failed', error)
+        // Show error toast
+    } finally {
+        isSubscribing.value = false
+    }
+}
+
+const handleCancelSubscription = async () => {
+    if (!loginStore.userId) return
+    isCancelling.value = true
+    try {
+        const sub = await subscriptionService.cancelSubscription(loginStore.userId)
+        if (sub) {
+             // Update local subscription object
+             loginStore.subscription = sub
+             // If isActive became false (immediate cancel), update isSubscribed
+             if (!sub.isActive) {
+                 loginStore.isSubscribed = false
+             }
+        }
+    } catch (error) {
+        console.error('Cancellation failed', error)
+    } finally {
+        isCancelling.value = false
+    }
+}
 </script>
 
 <template>
   <div class="home-view">
+    <div v-if="isInitializing" class="home-view__loading-overlay">
+        <Loader2 class="home-view__spinner" :size="48" />
+    </div>
+
     <div class="home-view__toggle">
       <ThemeToggle />
     </div>
-    <HomeAppBar />
+    <HomeAppBar 
+        @purchase="isPaywallOpen = true" 
+        @open-billing="isBillingOpen = true"
+    />
+    <PaywallModal 
+      :is-open="isPaywallOpen"
+      :is-loading="isSubscribing"
+      @close="isPaywallOpen = false"
+      @subscribe="handleSubscribe"
+    />
+    <BillingModal
+        :is-open="isBillingOpen"
+        :is-loading="isCancelling"
+        :subscription="loginStore.subscription"
+        @close="isBillingOpen = false"
+        @cancel="handleCancelSubscription"
+    />
+    
     
     <main class="home-content">
        <Transition name="fade" mode="out-in">
@@ -78,6 +160,26 @@ const handleBackToChromaKey = () => {
   align-items: center;
   transition: background-color 0.3s ease; /* Smooth background transition */
   padding: 1rem; /* Ensure space for fixed input */
+
+  &__loading-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background-color: hsl(var(--background));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+  }
+  
+  &__spinner {
+      color: hsl(var(--primary));
+      animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+  }
 
   /* Main content area that scrolls */
   .home-content {
