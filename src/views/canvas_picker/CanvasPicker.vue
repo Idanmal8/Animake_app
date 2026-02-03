@@ -64,22 +64,21 @@ const renderPreview = () => {
     if (!ctx) return
 
     // Target size
-    const size = canvasStore.selectedSize
-    canvas.width = size
-    canvas.height = size
+    const width = canvasStore.width
+    const height = canvasStore.height
+    canvas.width = width
+    canvas.height = height
     
     // Pixel art look: Nearest Neighbor scaling
-    // We scale the massive video down to 'size x size'.
+    // We scale the massive video down to target resolution.
     ctx.imageSmoothingEnabled = false
 
     // 1. Draw image resized (Downscale first for performance!)
-    // This allows real-time playback. Processing full 1080p frame pixel-by-pixel in JS is too slow.
-    ctx.clearRect(0, 0, size, size)
-    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, size, size)
+    ctx.clearRect(0, 0, width, height)
+    ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
     
     // 2. Apply Chroma Key on the small canvas
-    // Processing 64x64 pixels is instant.
-    chromaStore.processFrameData(ctx, size, size)
+    chromaStore.processFrameData(ctx, width, height)
 }
 
 const startPreview = () => {
@@ -106,29 +105,29 @@ const downloadGIF = async () => {
     stopPreview() // Pause preview to save resources
     
     try {
-        const size = canvasStore.selectedSize
+        const width = canvasStore.width
+        const height = canvasStore.height
         const gif = new GIF({
             workers: 2,
             quality: 1, // Best quality
-            width: size,
-            height: size,
+            width: width,
+            height: height,
             workerScript: '/gif.worker.js',
-            transparent: '0x000000' // Try to detect transparency? strict format?
-            // Actually gif.js handles transparency if we pass transparent ImageData/Canvas
+            transparent: '0x000000' 
         })
         
         // Render each frame to a new temporary canvas and add to GIF
         for (const img of imageCache.value) {
             const tempCanvas = document.createElement('canvas')
-            tempCanvas.width = size
-            tempCanvas.height = size
+            tempCanvas.width = width
+            tempCanvas.height = height
             const ctx = tempCanvas.getContext('2d', { willReadFrequently: true })
             if (!ctx) continue
             
             ctx.imageSmoothingEnabled = false
-            ctx.clearRect(0, 0, size, size)
-            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, size, size)
-            chromaStore.processFrameData(ctx, size, size)
+            ctx.clearRect(0, 0, width, height)
+            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, width, height)
+            chromaStore.processFrameData(ctx, width, height)
             
             gif.addFrame(tempCanvas, { 
                 delay: 1000 / framesStore.fps,
@@ -140,7 +139,7 @@ const downloadGIF = async () => {
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
-            a.download = 'animake_pixel_art.gif'
+            a.download = `animake_${width}x${height}.gif`
             document.body.appendChild(a)
             a.click()
             document.body.removeChild(a)
@@ -164,30 +163,21 @@ const handleDownloadSpriteSheet = async () => {
     stopPreview()
 
     try {
-        const size = canvasStore.selectedSize
-        const allFramesData: ImageData[] = []
+        const width = canvasStore.width
+        const height = canvasStore.height
         
-        // Use imageCache which is already loaded
-        for (const img of imageCache.value) {
-            const tempCanvas = document.createElement('canvas')
-            tempCanvas.width = size
-            tempCanvas.height = size
-            const ctx = tempCanvas.getContext('2d', { willReadFrequently: true })
-            if (!ctx) continue
-            
-            ctx.imageSmoothingEnabled = false
-            ctx.clearRect(0, 0, size, size)
-            ctx.drawImage(img, 0, 0, img.width, img.height, 0, 0, size, size)
-            chromaStore.processFrameData(ctx, size, size)
-            
-            const imageData = ctx.getImageData(0, 0, size, size)
-            allFramesData.push(imageData)
-        }
-
-        const { imageUrl, metadata } = await spritesStore.generateSpriteSheet(allFramesData, framesStore.fps)
+        // Use Backend for heavy lifting (resizing, chroma key, stitching)
+        const { imageUrl, metadata } = await spritesStore.generateSpriteSheetBackend(
+            framesStore.selectedFrames,
+            width,
+            height,
+            framesStore.fps,
+            chromaStore.targetColor,
+            chromaStore.tolerance
+        )
         
         // Download Image
-        const filename = `sprite_sheet_${metadata.cols}x${metadata.rows}.png`
+        const filename = `sprite_sheet_${metadata.cols}x${metadata.rows}_${width}x${height}.png`
         const a = document.createElement('a')
         a.href = imageUrl
         a.download = filename
@@ -208,13 +198,30 @@ const handleDownloadSpriteSheet = async () => {
     }
 }
 
+const safeDebounce = (fn: Function, delay: number) => {
+    let timeout: number | null = null
+    return (...args: any[]) => {
+        if (timeout) clearTimeout(timeout)
+        timeout = window.setTimeout(() => {
+            fn(...args)
+        }, delay)
+    }
+}
+
+const debouncedRender = safeDebounce(() => {
+    // Only render if dimensions are valid (prevent 0x0 or huge crashes)
+    if (canvasStore.width > 0 && canvasStore.height > 0 && canvasStore.width <= 4096 && canvasStore.height <= 4096) {
+        renderPreview()
+    }
+}, 300)
+
 // Watchers
 watch(currentFrameIndex, renderPreview)
 
-// Re-render when settings change
+// Re-render when settings change (debounced for inputs)
 watch(
-    [() => canvasStore.selectedSize, () => chromaStore.targetColor, () => chromaStore.tolerance], 
-    renderPreview
+    [() => canvasStore.width, () => canvasStore.height, () => chromaStore.targetColor, () => chromaStore.tolerance], 
+    debouncedRender
 )
 
 // Re-load images if selected frames change (e.g. back navigation)
@@ -239,15 +246,30 @@ onUnmounted(() => {
     stopPreview()
 })
 
+const handleCustomDimension = (dim: 'w' | 'h', event: Event) => {
+    const target = event.target as HTMLInputElement
+    let val = parseInt(target.value)
+    
+    if (isNaN(val)) return
+
+    // Cap at 1200 as per requirement
+    if (val > 1200) val = 1200
+    if (val < 1) val = 1
+    
+    // Update input visually if clamped
+    if (String(val) !== target.value) {
+        target.value = String(val)
+    }
+
+    if (dim === 'w') {
+        canvasStore.setSize(val, canvasStore.height)
+    } else {
+        canvasStore.setSize(canvasStore.width, val)
+    }
+}
+
 const flutterCode = computed(() => {
     if (!generatedMetadata.value) return ''
-    // remove extension for the asset loader usually, but user template has .png
-    // The user template: images.load('{{sprite_file}}.png');
-    // generatedFilename includes extension?
-    // Let's assume generatedFilename is "sprite_sheet_4x4.png"
-    // Use basename logic or just name without extension if the template adds .png?
-    // Template: images.load('{{sprite_file}}.png');
-    // So {{sprite_file}} should be the name WITHOUT .png
     const nameWithoutExt = generatedFilename.value.replace(/\.png$/i, '')
     
     return `import 'dart:ui';
@@ -270,8 +292,15 @@ class MyGame extends FlameGame {
     final int amountPerRow = ${generatedMetadata.value.cols};
     final int amount = ${framesStore.selectedFrames.length};
 
+    // Calculate frame size from total sheet size
+    // sheetWidth / cols, sheetHeight / rows
+    // Or just use the known frameWidth/Height from metadata if available (it is).
+    // But for safety:
     final frameWidth = spriteSheet.width / amountPerRow;
-    final frameHeight = spriteSheet.height / amountPerRow;
+    // For rows, we need to know rows count or calculate?
+    // Metadata has rows.
+    final int rows = ${generatedMetadata.value.rows};
+    final frameHeight = spriteSheet.height / rows;
 
     final animation = SpriteAnimation.fromFrameData(
       spriteSheet,
@@ -287,8 +316,8 @@ class MyGame extends FlameGame {
     // 3. Create the component
     final player = SpriteAnimationComponent(
       animation: animation,
-      size: Vector2(128, 128), // size of the sprite on the screen
-      position: Vector2(0, 0), //position on screen
+      size: Vector2(${canvasStore.width}.0, ${canvasStore.height}.0), // Render size
+      position: Vector2(100, 100),
     );
 
     add(player);
@@ -300,8 +329,8 @@ class MyGame extends FlameGame {
 const flutterWidgetCode = computed(() => {
     return `return Center(
   child: SizedBox(
-    width: 128, // Size of the sprite
-    height: 128, // Size of the sprite
+    width: ${canvasStore.width}, // Size of the sprite
+    height: ${canvasStore.height}, // Size of the sprite
     child: GameWidget(game: MyGame()),
   ),
 );`
@@ -326,34 +355,83 @@ const copyToClipboard = async (text: string, section: string) => {
     <div class="canvas-picker">
         <template v-if="!isSuccess">
             <div class="canvas-picker__title">Choose Canvas Size</div>
-            <div class="canvas-picker__description">Select the resolution for your pixel art animation.</div>
+            <div class="canvas-picker__description">Select a preset or enter custom dimensions.</div>
 
-            <div class="canvas-picker__sizes-pick">
-                <button 
-                    v-for="(size, index) in canvasStore.availableSizes" 
-                    :key="size"
-                    class="size-chip"
-                    :class="{ 'is-selected': canvasStore.selectedSize === size }"
-                    :style="{ animationDelay: `${index * 0.1}s` }"
-                    @click="canvasStore.setSize(size)"
-                >
-                    {{ size }}x{{ size }}
-                </button>
+            <div class="canvas-picker__options">
+                <div class="custom-dimensions">
+                    <div class="input-group">
+                        <label>Width</label>
+                        <input 
+                            type="number" 
+                            :value="canvasStore.width"
+                            @input="e => handleCustomDimension('w', e)"
+                            min="1" 
+                            max="1200"
+                        >
+                    </div>
+                    <div class="x-divider">✕</div>
+                    <div class="input-group">
+                        <label>Height</label>
+                        <input 
+                            type="number" 
+                            :value="canvasStore.height"
+                            @input="e => handleCustomDimension('h', e)"
+                            min="1" 
+                            max="1200"
+                        >
+                    </div>
+                </div>
+                <div class="preset-category">
+                    <div class="category-label">Square</div>
+                    <div class="canvas-picker__sizes-pick">
+                        <button 
+                            v-for="size in [24, 32, 48, 64, 128, 256, 512, 1024]" 
+                            :key="size"
+                            class="size-chip"
+                            :class="{ 'is-selected': canvasStore.width === size && canvasStore.height === size }"
+                            @click="canvasStore.setSize(size, size)"
+                        >
+                            {{ size }}px
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preset-category">
+                    <div class="category-label">Landscape (Wide)</div>
+                    <div class="canvas-picker__sizes-pick">
+                        <button 
+                            v-for="size in [{w:48,h:24}, {w:64,h:32}, {w:128,h:64}, {w:256,h:128}, {w:512,h:256}, {w:1024,h:512}]" 
+                            :key="size.w"
+                            class="size-chip"
+                            :class="{ 'is-selected': canvasStore.width === size.w && canvasStore.height === size.h }"
+                            @click="canvasStore.setSize(size.w, size.h)"
+                        >
+                            {{ size.w }}x{{ size.h }}
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preset-category">
+                    <div class="category-label">Portrait (Tall)</div>
+                    <div class="canvas-picker__sizes-pick">
+                        <button 
+                            v-for="size in [{w:24,h:48}, {w:32,h:64}, {w:64,h:128}, {w:128,h:256}, {w:256,h:512}, {w:512,h:1024}]" 
+                            :key="size.w"
+                            class="size-chip"
+                            :class="{ 'is-selected': canvasStore.width === size.w && canvasStore.height === size.h }"
+                            @click="canvasStore.setSize(size.w, size.h)"
+                        >
+                            {{ size.w }}x{{ size.h }}
+                        </button>
+                    </div>
+                </div>
             </div>
             
             <div class="canvas-picker__preview">
-                <!-- 
-                    Container controls the displayed size.
-                    We allow it to be wider now. 
-                -->
                 <div class="preview-box">
-                    <!-- 
-                    The canvas itself is small (e.g. 32x32), 
-                    but we scale it up with CSS to fill the box while preserving pixelation.
-                    -->
                     <canvas ref="canvasRef"></canvas>
                 </div>
-                <p class="preview-label">Preview ({{ canvasStore.selectedSize }}x{{ canvasStore.selectedSize }})</p>
+                <p class="preview-label">Preview ({{ canvasStore.width }}x{{ canvasStore.height }})</p>
             </div>
 
             <div class="canvas-picker__continue-btn">
@@ -468,12 +546,67 @@ const copyToClipboard = async (text: string, section: string) => {
         font-size: 1.1rem;
     }
 
+    &__options {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        width: 100%;
+        max-width: 800px;
+    }
+
     &__sizes-pick {
         display: flex;
         flex-wrap: wrap;
         justify-content: center;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    .custom-dimensions {
+        display: flex;
+        align-items: flex-end;
         gap: 1rem;
-        max-width: 800px; /* Wider */
+        padding: 1rem;
+        background: hsl(var(--card));
+        border: 1px solid hsl(var(--border));
+        border-radius: 12px;
+        
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            
+            label {
+                font-size: 0.75rem;
+                font-weight: 600;
+                color: hsl(var(--muted-foreground));
+                text-transform: uppercase;
+            }
+            
+            input {
+                background: hsl(var(--background));
+                border: 1px solid hsl(var(--border));
+                color: hsl(var(--foreground));
+                padding: 0.5rem;
+                border-radius: 6px;
+                width: 80px;
+                text-align: center;
+                font-family: monospace;
+                font-size: 1rem;
+                
+                &:focus {
+                    outline: 2px solid hsl(var(--primary));
+                    border-color: transparent;
+                }
+            }
+        }
+        
+        .x-divider {
+            padding-bottom: 0.5rem;
+            color: hsl(var(--muted-foreground));
+            font-weight: bold;
+        }
     }
 
     &__preview {
@@ -490,12 +623,41 @@ const copyToClipboard = async (text: string, section: string) => {
     }
 }
 
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.preset-category {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.category-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: hsl(var(--muted-foreground));
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
 .size-chip {
     background: hsl(var(--card));
     border: 1px solid hsl(var(--border));
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1rem;
     border-radius: 999px;
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.2s;
     
@@ -548,17 +710,6 @@ const copyToClipboard = async (text: string, section: string) => {
 .preview-label {
     font-family: monospace;
     color: hsl(var(--muted-foreground));
-}
-
-@keyframes popIn {
-    from {
-        opacity: 0;
-        transform: scale(0.5);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
 }
 
 .success-view {

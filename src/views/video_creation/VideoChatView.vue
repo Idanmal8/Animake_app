@@ -21,8 +21,8 @@
         <div class="video-chat__list">
           <Message v-for="message in videoStore.messages" :key="message.id" :from="message.role">
             <MessageAvatar
-              :src="message.role === 'user' ? personIcon : magnoliaLogo"
-              :name="message.role === 'user' ? 'User' : 'Magnolia'"
+              :src="message.role === 'user' ? personIcon : animakeLogo"
+              :name="message.role === 'user' ? 'User' : 'Animake'"
             />
             
             <div v-if="message.video" class="mt-2">
@@ -85,7 +85,7 @@ import { useVideoStore } from '@/stores/video/video'
 import { Message, MessageAvatar } from '@/components/ai-elements/message'
 import AppButton from '@/components/buttons/AppButton.vue'
 import personIcon from '@/assets/icons/person.png'
-import magnoliaLogo from '@/assets/logo-no-bg.png'
+import animakeLogo from '@/assets/logo-no-bg.png'
 
 const videoStore = useVideoStore()
 </script>

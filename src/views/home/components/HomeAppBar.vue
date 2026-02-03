@@ -1,8 +1,8 @@
 <template>
   <div class="home-app-bar">
     <div class="home-app-bar__leading">
-      <img :src="logo" alt="Magnolia Logo" class="home-app-bar__logo" />
-      <span class="home-app-bar__title">Magnolia</span>
+      <img :src="logo" alt="Animake Logo" class="home-app-bar__logo" />
+      <span class="home-app-bar__title">Animake</span>
     </div>
     <div class="home-app-bar__actions">
       <div v-if="isSubscribed" class="home-app-bar__user-menu-wrapper" @click="isMenuOpen = !isMenuOpen">
@@ -226,10 +226,6 @@ onUnmounted(() => {
 
     &__actions {
       display: none;
-    }
-
-    &__leading {
-      /* Ensure logo/title logic centers properly if needed */
     }
   }
 }

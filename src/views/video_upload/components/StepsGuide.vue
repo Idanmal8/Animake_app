@@ -11,12 +11,12 @@ const steps = [
   {
     icon: Video,
     title: 'Animate with AI',
-    description: 'Animate your art with Magnolia, Kling, WAN, or Grok.',
+    description: 'Animate your art with Animake, Kling, WAN, or Grok.',
   },
   {
     icon: Upload,
-    title: 'Upload to Magnolia',
-    description: 'Upload your video here and Magnolia will guide you the rest of the way!',
+    title: 'Upload to Animake',
+    description: 'Upload your video here and Animake will guide you the rest of the way!',
   },
   {
     icon: Download,

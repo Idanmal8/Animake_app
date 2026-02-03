@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { httpClient } from '@/api/httpClient'
 
 export const useSpritesStore = defineStore('sprites', () => {
     const isProcessing = ref(false)
@@ -66,8 +67,44 @@ export const useSpritesStore = defineStore('sprites', () => {
         return { imageUrl: dataUrl, metadata }
     }
 
+    const generateSpriteSheetBackend = async (
+        frames: { dataUrl: string }[], 
+        width: number, 
+        height: number, 
+        fps: number,
+        targetColor: string, 
+        tolerance: number
+    ): Promise<{ imageUrl: string, metadata: any }> => {
+        isProcessing.value = true
+        try {
+            const formData = new FormData()
+            formData.append('width', width.toString())
+            formData.append('height', height.toString())
+            formData.append('fps', fps.toString())
+            formData.append('targetColor', targetColor)
+            formData.append('tolerance', tolerance.toString())
+
+            // Convert DataURLs to Blobs (fetch all first to preserve order)
+            const blobs = await Promise.all(frames.map(async (frame) => {
+                const res = await fetch(frame.dataUrl)
+                return await res.blob()
+            }))
+
+            // Append ordered blobs
+            blobs.forEach((blob, index) => {
+                formData.append('files', blob, `frame_${index}.png`)
+            })
+
+            const response = await httpClient.postFormData<{ imageUrl: string, metadata: any }>('/sprites/generate', formData)
+            return response
+        } finally {
+            isProcessing.value = false
+        }
+    }
+
     return {
         isProcessing,
         generateSpriteSheet,
+        generateSpriteSheetBackend
     }
 })

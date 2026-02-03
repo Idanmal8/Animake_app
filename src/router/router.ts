@@ -29,7 +29,8 @@ const router = createRouter({
     },
     {
       path: '/',
-      redirect: '/login',
+      name: 'corporate-site',
+      component: routes.CorporateSite,
     },
   ],
 })
