@@ -3,24 +3,40 @@ import { useCanvasPickerStore } from '@/stores/canvas_picker/canvas_picker'
 import { useChromaKeyStore } from '@/stores/chroma_key/chroma_key'
 import { useVideoFramesStore } from '@/stores/video_frames/video_frames'
 import { useSpritesStore } from '@/stores/sprites/sprites'
+import { useLoginStore } from '@/stores/login/login'
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import GIF from 'gif.js'
 import { useRouter } from 'vue-router'
 import flutterIcon from '@/assets/icons/flutter.svg'
+import { Loader2 } from 'lucide-vue-next'
 
 const canvasStore = useCanvasPickerStore()
 const chromaStore = useChromaKeyStore()
 const framesStore = useVideoFramesStore()
 const spritesStore = useSpritesStore()
+const loginStore = useLoginStore()
 const router = useRouter()
 
 const emit = defineEmits<{
   (e: 'back'): void
+  (e: 'show-paywall', payload: { title: string, description: string }): void
 }>()
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const previewInterval = ref<number | null>(null)
+
+// ... (existing code, skipping lines for brevity in replacement if not matching unique block, 
+// strictly speaking I should use multiple chunks or ensure uniqueness. 
+// The emits block is unique enough. 
+// The handleDownload function start is unique enough.
+// I can't do both in one REPLACE call if they are far apart unless I replace the whole middle chunk which is bad.
+// I will split this into two calls or use multi_replace.
+// Let's use multi_replace.
+
+// Wait, I am using `replace_file_content` tool. It supports single block.
+// I will use `replace_file_content` for Emits first.
+
 const currentFrameIndex = ref(0) 
 
 // Cache for pre-loaded images to prevent stuttering
@@ -159,6 +175,16 @@ const downloadGIF = async () => {
 
 const handleDownloadSpriteSheet = async () => {
     if (isGenerating.value || !areImagesLoaded.value) return
+
+    // Check trial usage
+    if (!loginStore.isSubscribed && loginStore.trialUsage && loginStore.trialUsage.remaining <= 0) {
+        emit('show-paywall', {
+            title: 'Free Trial Ended',
+            description: 'You have used all your free generations. Upgrade to Pro to continue creating.'
+        })
+        return
+    }
+
     isGenerating.value = true
     stopPreview()
 
@@ -188,6 +214,9 @@ const handleDownloadSpriteSheet = async () => {
         generatedFilename.value = filename
         generatedMetadata.value = metadata
         isSuccess.value = true
+        
+        // Increment trial usage
+        await loginStore.incrementTrialUsage()
         
     } catch (e) {
         console.error("Sprite sheet generation failed", e)
@@ -349,10 +378,18 @@ const copyToClipboard = async (text: string, section: string) => {
         console.error('Failed to copy: ', err)
     }
 }
+
+const openCloudConvert = () => {
+    window.open('https://cloudconvert.com/png-to-webp', '_blank')
+}
 </script>
 
 <template>
     <div class="canvas-picker">
+        <div v-if="isGenerating" class="canvas-picker__loading-overlay">
+            <Loader2 class="canvas-picker__spinner" :size="48" />
+            <p class="canvas-picker__loading-text">Generating Sprite Sheet...</p>
+        </div>
         <template v-if="!isSuccess">
             <div class="canvas-picker__title">Choose Canvas Size</div>
             <div class="canvas-picker__description">Select a preset or enter custom dimensions.</div>
@@ -469,6 +506,16 @@ const copyToClipboard = async (text: string, section: string) => {
                     :icon="flutterIcon"
                     @click="showFlutterModal = true"
                 />
+                
+                <div class="optimization-section">
+                    <p class="optimization-text">To make size optimal, convert to WebP and then use in your Flutter app.</p>
+                    <AppButton 
+                        title="Convert to WebP (CloudConvert)"
+                        variant="secondary"
+                        @click="openCloudConvert"
+                    />
+                </div>
+
                  <AppButton 
                     title="Back"
                     variant="ghost" 
@@ -621,6 +668,35 @@ const copyToClipboard = async (text: string, section: string) => {
     &__continue-btn {
         margin-top: auto;
     }
+
+    &__loading-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background-color: hsl(var(--background) / 0.8);
+        backdrop-filter: blur(4px);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+    }
+
+    &__spinner {
+        color: hsl(var(--primary));
+        animation: spin 1s linear infinite;
+    }
+
+    &__loading-text {
+        font-family: 'azlando_sans_semiExpanded', sans-serif;
+        font-size: 1.2rem;
+        color: hsl(var(--foreground));
+    }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 @keyframes popIn {
@@ -758,8 +834,29 @@ const copyToClipboard = async (text: string, section: string) => {
 .actions {
     display: flex;
     flex-direction: column;
+    align-items: center; /* Center buttons */
     gap: 1rem;
     margin-top: 2rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.optimization-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: hsl(var(--card));
+    border: 1px dashed hsl(var(--border));
+    border-radius: 8px;
+    width: 100%;
+}
+
+.optimization-text {
+    font-size: 0.8rem;
+    color: hsl(var(--muted-foreground));
+    text-align: center;
 }
 
 /* Modal Styles */

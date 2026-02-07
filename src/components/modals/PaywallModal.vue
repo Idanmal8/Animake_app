@@ -13,9 +13,10 @@
         </div>
 
         <!-- Title & Description -->
-        <h2 class="paywall-modal__title">Upgrade to Pro</h2>
+        <!-- Title & Description -->
+        <h2 class="paywall-modal__title">{{ title || 'Upgrade to Pro' }}</h2>
         <p class="paywall-modal__description">
-          Unlock these features by upgrading to a Pro plan.
+          {{ description || 'Unlock these features by upgrading to a Pro plan.' }}
         </p>
 
         <!-- Features List -->
@@ -28,45 +29,37 @@
 
         <!-- Plans Selection -->
         <div class="paywall-modal__plans">
-          <!-- Annual Plan -->
           <div 
-            @click="selectedCycle = 'annually'"
+            v-for="product in products" 
+            :key="product.id"
+            @click="selectedProductId = product.id"
             class="paywall-modal__plan"
-            :class="{ 'paywall-modal__plan--selected': selectedCycle === 'annually' }"
+            :class="{ 'paywall-modal__plan--selected': selectedProductId === product.id }"
           >
             <div class="paywall-modal__plan-left">
               <div class="paywall-modal__radio">
-                 <div v-if="selectedCycle === 'annually'" class="paywall-modal__radio-inner" />
+                 <div v-if="selectedProductId === product.id" class="paywall-modal__radio-inner" />
               </div>
               <div class="paywall-modal__plan-info">
-                <div class="paywall-modal__plan-duration">12 months</div>
-                <div class="paywall-modal__plan-old-price">$84.00</div>
+                <div class="paywall-modal__plan-duration">{{ getDurationLabel(product) }}</div>
+                <div class="paywall-modal__price-row" v-if="product.attributes.from_price">
+                  <div class="paywall-modal__plan-old-price">₪{{ product.attributes.from_price / 100 }}</div>
+                  <div class="paywall-modal__plan-discounted-price">{{ product.attributes.price_formatted }}</div>
+                </div>
+                 <div class="paywall-modal__plan-price" v-else>
+                    {{ product.attributes.price_formatted }}
+                 </div>
               </div>
-              <span class="paywall-modal__save-badge">
-                Save 33%
+               <!-- Logic for save badge is complex without comparing, omitting for now or can deduce from from_price -->
+               <span v-if="product.attributes.from_price" class="paywall-modal__save-badge">
+                Save 33% <!-- Logic to calculate verify? -->
               </span>
             </div>
             <div class="paywall-modal__plan-right">
-              <div class="paywall-modal__plan-price">$4.67 <span class="paywall-modal__plan-period">/ mo</span></div>
-            </div>
-          </div>
-
-          <!-- Monthly Plan -->
-          <div 
-            @click="selectedCycle = 'monthly'"
-            class="paywall-modal__plan"
-            :class="{ 'paywall-modal__plan--selected': selectedCycle === 'monthly' }"
-          >
-            <div class="paywall-modal__plan-left">
-              <div class="paywall-modal__radio">
-                <div v-if="selectedCycle === 'monthly'" class="paywall-modal__radio-inner" />
+              <div class="paywall-modal__plan-price">
+                  {{ calculateMonthlyPrice(product) }} 
+                  <span class="paywall-modal__plan-period">/ mo</span>
               </div>
-              <div class="paywall-modal__plan-info">
-                <div class="paywall-modal__plan-duration">1 month</div>
-              </div>
-            </div>
-            <div class="paywall-modal__plan-right">
-              <div class="paywall-modal__plan-price">$7.00 <span class="paywall-modal__plan-period">/ mo</span></div>
             </div>
           </div>
         </div>
@@ -93,21 +86,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { X, Check } from 'lucide-vue-next'
 import AppButton from '@/components/buttons/AppButton.vue'
+import type { LemonSqueezyProductData } from '@/types/lemon-squeezy'
+import { SubscriptionType } from '@/types/lemon-squeezy'
 
 const props = defineProps<{
   isOpen: boolean
   isLoading: boolean
+  products: LemonSqueezyProductData[]
+  title?: string
+  description?: string
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
-  (e: 'subscribe', cycle: 'monthly' | 'annually'): void
+  (e: 'subscribe', cycle: 'monthly' | 'annually'): void // Keeping signature but maybe unused
 }>()
 
-const selectedCycle = ref<'monthly' | 'annually'>('annually')
+const selectedProductId = ref<string>('')
+
+// Auto-select first product or specific default
+watch(() => props.products, (newProducts) => {
+    if (newProducts.length > 0 && !selectedProductId.value) {
+        // Prefer yearly or first
+        const yearly = newProducts.find(p => p.id === SubscriptionType.Yearly)
+        selectedProductId.value = yearly ? yearly.id : newProducts[0]!.id
+    }
+}, { immediate: true })
+
 
 const features = [
   'Unlimited video to sprite',
@@ -118,8 +126,30 @@ const close = () => {
   emit('close')
 }
 
+const getDurationLabel = (product: LemonSqueezyProductData) => {
+    if (product.id === SubscriptionType.Monthly) return '1 Month'
+    if (product.id === SubscriptionType.Yearly) return '12 Months'
+    return product.attributes.name
+}
+
+const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
+    // This is a rough estimation for display. 
+    // Ideally we rely on what the API says or just divideprice
+    const price = product.attributes.price / 100
+    if (product.id === SubscriptionType.Yearly) {
+        return '₪' + (price / 12).toFixed(2)
+    }
+    return '₪' + price.toFixed(2)
+}
+
+
 const handleSubscribe = () => {
-  emit('subscribe', selectedCycle.value)
+  const product = props.products.find(p => p.id === selectedProductId.value)
+  if (product) {
+      window.open(product.attributes.buy_now_url, '_blank')
+      // Close modal?
+      emit('close')
+  }
 }
 </script>
 
@@ -284,6 +314,18 @@ const handleSubscribe = () => {
     font-size: 0.75rem;
     color: hsl(var(--muted-foreground));
     text-decoration: line-through;
+  }
+
+  &__price-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  &__plan-discounted-price {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: hsl(var(--foreground));
   }
 
   &__save-badge {

@@ -10,20 +10,39 @@ import PaywallModal from '@/components/modals/PaywallModal.vue'
 import BillingModal from '@/components/modals/BillingModal.vue'
 import { subscriptionService } from '@/api/services/subscription'
 import { useLoginStore } from '@/stores/login/login'
+import { useProductStore } from '@/stores/products/products'
 import { storeToRefs } from 'pinia'
 import { Loader2 } from 'lucide-vue-next'
 
 const loginStore = useLoginStore()
+const productStore = useProductStore()
+const isLoading = ref(true)
 const { isInitializing } = storeToRefs(loginStore)
 const currentStep = ref<'upload' | 'slicing' | 'chroma-key' | 'canvas-picker'>('upload')
 
-onMounted(() => {
-    loginStore.initialize()
+onMounted(async () => {
+    try {
+        await loginStore.initialize()
+        await Promise.all([
+            productStore.fetchProducts(),
+            loginStore.fetchTrialUsage()
+        ])
+    } finally {
+        isLoading.value = false
+    }
 })
 const isPaywallOpen = ref(false)
 const isSubscribing = ref(false)
 const isBillingOpen = ref(false)
 const isCancelling = ref(false)
+const paywallTitle = ref('')
+const paywallDescription = ref('')
+
+const handleShowPaywall = (payload?: { title?: string, description?: string }) => {
+    paywallTitle.value = payload?.title || ''
+    paywallDescription.value = payload?.description || ''
+    isPaywallOpen.value = true
+}
 
 const handleContinueToSlicing = () => {
     currentStep.value = 'slicing'
@@ -59,7 +78,7 @@ const handleSubscribe = async (cycle: 'monthly' | 'annually') => {
         })
         if (sub) {
              // Refetch subscription to ensure fresh data for billing modal
-             const freshSub = await subscriptionService.getSubscription(loginStore.userId)
+             const freshSub = await subscriptionService.getSubscription(loginStore.userId)             
              if (freshSub) {
                 loginStore.isSubscribed = true
                 loginStore.subscription = freshSub
@@ -97,7 +116,7 @@ const handleCancelSubscription = async () => {
 
 <template>
   <div class="home-view">
-    <div v-if="isInitializing" class="home-view__loading-overlay">
+    <div v-if="isLoading" class="home-view__loading-overlay">
         <Loader2 class="home-view__spinner" :size="48" />
     </div>
 
@@ -111,6 +130,9 @@ const handleCancelSubscription = async () => {
     <PaywallModal 
       :is-open="isPaywallOpen"
       :is-loading="isSubscribing"
+      :products="productStore.products"
+      :title="paywallTitle"
+      :description="paywallDescription"
       @close="isPaywallOpen = false"
       @subscribe="handleSubscribe"
     />
@@ -128,6 +150,7 @@ const handleCancelSubscription = async () => {
            <VideoUpload 
                 v-if="currentStep === 'upload'" 
                 @continue="handleContinueToSlicing" 
+                @show-paywall="handleShowPaywall"
             />
            <VideoFramesSlicing 
                 v-else-if="currentStep === 'slicing'" 
@@ -142,6 +165,7 @@ const handleCancelSubscription = async () => {
            <CanvasPicker 
                 v-else-if="currentStep === 'canvas-picker'"
                 @back="handleBackToChromaKey"
+                @show-paywall="handleShowPaywall"
             />
        </Transition>
     </main>

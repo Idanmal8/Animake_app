@@ -1,13 +1,59 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import gsap from 'gsap'
 import AppButton from '@/components/buttons/AppButton.vue'
 import SpriteSheetPlayer from '@/components/display/SpriteSheetPlayer.vue'
-import frogSprite from '@/assets/sprites/frog_sprite.png'
 import dogSprite from '@/assets/sprites/dog_sprite.png'
-import manWalkingSprite from '@/assets/sprites/man_walking.png'
-import manRunningSprite from '@/assets/sprites/sprite_sheet_11x8_740x1013.png'
+import ghostSprite from '@/assets/sprites/ghost1.png'
 
 const router = useRouter()
+
+const heroTitle = ref<HTMLElement | null>(null)
+const heroText = ref<HTMLElement | null>(null)
+const heroCta = ref<HTMLElement | null>(null)
+const spriteCards = ref<HTMLElement[]>([])
+const areSpritesPlaying = ref<boolean[]>(new Array(1).fill(false)) // Track playing state per card
+
+onMounted(() => {
+    const tl = gsap.timeline()
+    
+    tl.from(heroTitle.value, {
+        y: 50,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+    })
+    .from(heroText.value, {
+        y: 30,
+        opacity: 0,
+        duration: 1,
+        ease: 'power3.out'
+    }, '-=0.6')
+    .from(heroCta.value, {
+        y: 20,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out'
+    }, '-=0.6')
+    .from(spriteCards.value, {
+        y: 50,
+        opacity: 0,
+        duration: 0.8,
+        stagger: 0.15,
+        ease: 'power3.out'
+    }, '-=0.4')
+
+    // Start playing sprites only after the heavy entrance animation is mostly done
+    // to prevent main-thread fighting (GSAP vs Paint).
+    tl.to({}, {
+        duration: 0.1,
+        onComplete: () => {
+            // Trigger all sprites to start playing
+            areSpritesPlaying.value = areSpritesPlaying.value.map(() => true)
+        }
+    }, '-=0.5') // Start slightly before the very end of staggered entrance
+})
 
 const handleTryIt = () => {
     router.push({ name: 'login' })
@@ -27,52 +73,12 @@ interface SpriteAnimation {
 const animations: SpriteAnimation[] = [
     {
         id: 1,
-        src: dogSprite,
+        src: ghostSprite,
         frameWidth: 1024,
         frameHeight: 1024,
-        totalFrames: 62,
-        cols: 8,
-        rows: 8,
-        fps: 24
-    },
-    {
-        id: 2,
-        src: frogSprite,
-        frameWidth: 1024,
-        frameHeight: 1024,
-        totalFrames: 59,
-        cols: 8,
-        rows: 8,
-        fps: 24
-    },
-    {
-        id: 3,
-        src: manRunningSprite,
-        frameWidth: 740,
-        frameHeight: 1013,
-        totalFrames: 81,
-        cols: 11,
-        rows: 8,
-        fps: 32
-    },
-    {
-        id: 4,
-        src: frogSprite,
-        frameWidth: 1024,
-        frameHeight: 1024,
-        totalFrames: 59,
-        cols: 8,
-        rows: 8,
-        fps: 24
-    },
-    {
-        id: 5,
-        src: dogSprite,
-        frameWidth: 1024,
-        frameHeight: 1024,
-        totalFrames: 62,
-        cols: 8,
-        rows: 8,
+        totalFrames: 70,
+        cols: 16,
+        rows: 5,
         fps: 24
     },
 ]
@@ -98,9 +104,9 @@ const animations: SpriteAnimation[] = [
         <main class="corporate-site__main">
             <section class="corporate-site__hero">
                 <div class="corporate-site__hero-content">
-                    <h1>Turn Videos into Custom Animations</h1>
-                    <p>The easiest way to convert your videos into lightweight, scalable Custom animations for your web and mobile apps.</p>
-                    <div class="corporate-site__cta">
+                    <h1 ref="heroTitle">Turn Videos into Custom Animations</h1>
+                    <p ref="heroText">The easiest way to convert your videos into lightweight, scalable Custom animations for your web and mobile apps.</p>
+                    <div ref="heroCta" class="corporate-site__cta">
                         <AppButton 
                             title="Start Creating" 
                             color="hsl(var(--primary))" 
@@ -113,7 +119,12 @@ const animations: SpriteAnimation[] = [
 
                 <div class="corporate-site__hero-visual">
                     <div class="sprites-grid">
-                        <div v-for="anim in animations" :key="anim.id" class="sprite-card">
+                        <div 
+                            v-for="(anim, index) in animations" 
+                            :key="anim.id" 
+                            class="sprite-card"
+                            ref="spriteCards"
+                        >
                             <SpriteSheetPlayer 
                                 :src="anim.src"
                                 :frame-width="anim.frameWidth"
@@ -122,7 +133,7 @@ const animations: SpriteAnimation[] = [
                                 :cols="anim.cols"
                                 :rows="anim.rows"
                                 :fps="anim.fps"
-                                :playing="true"
+                                :playing="areSpritesPlaying[index]"
                             />
                         </div>
                     </div>
@@ -249,6 +260,9 @@ const animations: SpriteAnimation[] = [
         justify-content: center;
         box-shadow: 0 4px 12px rgba(0,0,0,0.05);
         transition: transform 0.2s, box-shadow 0.2s;
+        will-change: transform, opacity;
+        transform: translateZ(0); /* Force GPU layer */
+        backface-visibility: hidden;
 
         &:hover {
             transform: translateY(-4px);

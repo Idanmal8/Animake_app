@@ -1,6 +1,6 @@
 <template>
   <div class="home-app-bar">
-    <div class="home-app-bar__leading">
+    <div class="home-app-bar__leading" @click="router.push('/')">
       <img :src="logo" alt="Animake Logo" class="home-app-bar__logo" />
       <span class="home-app-bar__title">Animake</span>
     </div>
@@ -25,15 +25,28 @@
             </div>
           </Transition>
       </div>
-      <AppButton
-        v-else
-        title="Purchase"
-        type="button"
-        color="hsl(var(--primary))"
-        text-color="hsl(var(--primary-foreground))"
-        min-width="200px"
-        @click="emit('purchase')"
-      />
+      <div v-else class="home-app-bar__purchase-wrapper">
+        <div v-if="trialUsage && trialUsage.remaining > 0" class="home-app-bar__trial-info">
+             <span class="home-app-bar__trial-text">{{ trialUsage.remaining }} free generations left</span>
+              <AppButton
+                title="Purchase"
+                type="button"
+                color="hsl(var(--primary))"
+                text-color="hsl(var(--primary-foreground))"
+                size="sm"
+                @click="emit('purchase')"
+            />
+        </div>
+        <AppButton
+            v-else
+            title="Purchase"
+            type="button"
+            color="hsl(var(--primary))"
+            text-color="hsl(var(--primary-foreground))"
+            min-width="200px"
+            @click="emit('purchase')"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -48,7 +61,7 @@ import { User } from 'lucide-vue-next'
 import { useRouter } from 'vue-router'
 
 const loginStore = useLoginStore()
-const { isSubscribed } = storeToRefs(loginStore)
+const { isSubscribed, trialUsage } = storeToRefs(loginStore)
 const isMenuOpen = ref(false)
 const router = useRouter()
 
@@ -116,6 +129,12 @@ onUnmounted(() => {
     display: flex;
     align-items: center;
     gap: 1rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+
+    &:hover {
+        opacity: 0.8;
+    }
   }
 
   &__logo {
@@ -221,12 +240,30 @@ onUnmounted(() => {
     max-width: 100%;
   }
 
-  @media (max-width: 650px) {
+  @media (max-width: 900px) {
     justify-content: center;
 
     &__actions {
       display: none;
     }
+  }
+  &__purchase-wrapper {
+      display: flex;
+      align-items: center;
+  }
+
+  &__trial-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-right: 0.5rem;
+  }
+
+  &__trial-text {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: hsl(var(--foreground));
+      white-space: nowrap;
   }
 }
 </style>

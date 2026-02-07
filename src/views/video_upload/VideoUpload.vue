@@ -4,9 +4,11 @@ import StepsGuide from './components/StepsGuide.vue'
 import RangeSlider from '@/components/inputs/RangeSlider.vue'
 import AppButton from '@/components/buttons/AppButton.vue' // Assuming AppButton exists
 import { useVideoUploadStore } from '@/stores/video_upload/video_upload'
+import { useLoginStore } from '@/stores/login/login'
 import { ref, watch, computed } from 'vue'
 
 const store = useVideoUploadStore()
+const loginStore = useLoginStore()
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 const aspectRatio = ref(1.77) // Default 16:9
@@ -74,12 +76,29 @@ const togglePreviewLoop = () => {
 
 const emit = defineEmits<{
     (e: 'continue'): void
+    (e: 'show-paywall', payload: { title: string, description: string }): void
 }>()
 
 const handleContinue = () => {
     console.log('continue')
     emit('continue')
 }
+
+// Check trial consumption on file upload
+watch(() => store.videoFile, (file) => {
+    if (file) {
+        if (!loginStore.isSubscribed && loginStore.trialUsage && loginStore.trialUsage.remaining <= 0) {
+            // Reset the file immediately
+            store.reset()
+            
+            // Show paywall modal
+            emit('show-paywall', {
+                title: 'Free Trial Ended',
+                description: 'You have run out of free trial attempts. Upgrade to start a new project.'
+            })
+        }
+    }
+})
 
 // Watch play state to handle pause from native controls
 watch(() => store.isPlayingPreview, (isPlaying) => {

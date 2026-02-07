@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { computed, onMounted } from 'vue'
 
 const props = defineProps<{
   src: string
@@ -10,127 +10,80 @@ const props = defineProps<{
   rows: number
   fps?: number
   playing?: boolean
+  delay?: number // Optional start delay in seconds
 }>()
 
-const currentFrame = ref(0)
-const animationId = ref<number | null>(null)
-const lastFrameTime = ref(0)
-const isLoaded = ref(false)
-const canvasEl = ref<HTMLCanvasElement | null>(null)
-const ctx = ref<CanvasRenderingContext2D | null>(null)
+const fps = props.fps || 24
+const duration = props.totalFrames / fps
 
-const frameRate = computed(() => props.fps || 12)
-const interval = computed(() => 1000 / frameRate.value)
+// Generate a unique ID for this player instance to scope the keyframes
+const uid = `sprite-${Math.random().toString(36).substr(2, 9)}`
 
-// Preload image
-const image = new Image()
-
-const drawFrame = () => {
-    if (!ctx.value || !isLoaded.value || !canvasEl.value) return
-
-    const col = currentFrame.value % props.cols
-    const row = Math.floor(currentFrame.value / props.cols)
-
-    const sx = col * props.frameWidth
-    const sy = row * props.frameHeight
+// Generate precise keyframes for the sprite grid
+const keyframes = computed(() => {
+    let css = `@keyframes ${uid} {`
+    const step = 100 / props.totalFrames
     
-    // Clear canvas
-    ctx.value.clearRect(0, 0, canvasEl.value.width, canvasEl.value.height)
-    
-    // Draw specific frame
-    ctx.value.drawImage(
-        image, 
-        sx, sy, props.frameWidth, props.frameHeight, // Source Rect
-        0, 0, canvasEl.value.width, canvasEl.value.height // Destination Rect
-    )
-}
+    // Calculate percentage increments
+    // For background-position percentages: 0% is left, 100% is right.
+    const xStep = props.cols > 1 ? 100 / (props.cols - 1) : 0
+    const yStep = props.rows > 1 ? 100 / (props.rows - 1) : 0
 
-const updateFrame = (timestamp: number) => {
-  if (!lastFrameTime.value) lastFrameTime.value = timestamp
-  const elapsed = timestamp - lastFrameTime.value
-
-  if (elapsed >= interval.value) {
-    currentFrame.value = (currentFrame.value + 1) % props.totalFrames
-    lastFrameTime.value = timestamp - (elapsed % interval.value)
-    drawFrame()
-  }
-
-  if (props.playing !== false) {
-    animationId.value = requestAnimationFrame(updateFrame)
-  }
-}
-
-const startAnimation = () => {
-    if (animationId.value) return
-    lastFrameTime.value = performance.now()
-    animationId.value = requestAnimationFrame(updateFrame)
-}
-
-const stopAnimation = () => {
-    if (animationId.value) {
-        cancelAnimationFrame(animationId.value)
-        animationId.value = null
+    for (let i = 0; i < props.totalFrames; i++) {
+        const col = i % props.cols
+        const row = Math.floor(i / props.cols)
+        
+        const xPos = col * xStep
+        const yPos = row * yStep
+        
+        css += `
+        ${i * step}% { background-position: ${xPos}% ${yPos}%; }`
     }
-}
-
-watch(() => props.playing, (newVal) => {
-    if (newVal !== false) startAnimation()
-    else stopAnimation()
+    // Final frame wrap (optional, but keep it clean)
+    css += `}`
+    return css
 })
 
-onMounted(() => {
-    image.src = props.src
-    image.onload = () => {
-        isLoaded.value = true
-        if (canvasEl.value) {
-            canvasEl.value.width = props.frameWidth
-            canvasEl.value.height = props.frameHeight
-            ctx.value = canvasEl.value.getContext('2d')
-            // Optional: for pixel art, set false.
-            // But for large 1024px images, smoothing true is usually better.
-            // ctx.value!.imageSmoothingEnabled = false 
-            
-            drawFrame() 
-            startAnimation()
-        }
-    }
-})
-
-onUnmounted(() => {
-    stopAnimation()
+const styleElement = computed(() => {
+    return `<style>${keyframes.value}</style>`
 })
 </script>
 
 <template>
-  <div class="sprite-player-container" :style="{ aspectRatio: `${frameWidth} / ${frameHeight}` }">
-      <canvas ref="canvasEl" class="sprite-canvas"></canvas>
-      <div v-if="!isLoaded" class="loading">Loading...</div>
+  <div class="sprite-player-container">
+      <!-- Inject dynamic styles -->
+      <div v-html="styleElement"></div>
+      
+      <div 
+        class="sprite-display"
+        :style="{
+            backgroundImage: `url(${src})`,
+            backgroundSize: `${cols * 100}% ${rows * 100}%`,
+            animationName: uid,
+            animationDuration: `${duration}s`,
+            animationTimingFunction: `steps(1)`,
+            animationIterationCount: 'infinite',
+            animationPlayState: playing ? 'running' : 'paused'
+        }"
+      ></div>
   </div>
 </template>
 
 <style scoped>
 .sprite-player-container {
     width: 100%;
+    height: 100%;
+    overflow: hidden;
     position: relative;
 }
 
-.sprite-canvas {
+.sprite-display {
     width: 100%;
     height: 100%;
-    display: block;
-    /* Ensure the canvas scales nicely in the container */
-}
-
-.loading {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background: #f0f0f0;
-    color: #888;
+    background-repeat: no-repeat;
+    /* Force GPU acceleration */
+    will-change: background-position;
+    transform: translateZ(0); 
+    backface-visibility: hidden;
 }
 </style>
