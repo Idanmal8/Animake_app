@@ -133,6 +133,7 @@ const handleCancelSubscription = async () => {
       :products="productStore.products"
       :title="paywallTitle"
       :description="paywallDescription"
+      :user-email="loginStore.email"
       @close="isPaywallOpen = false"
       @subscribe="handleSubscribe"
     />

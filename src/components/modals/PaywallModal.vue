@@ -98,6 +98,7 @@ const props = defineProps<{
   products: LemonSqueezyProductData[]
   title?: string
   description?: string
+  userEmail?: string
 }>()
 
 const emit = defineEmits<{
@@ -146,7 +147,13 @@ const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
 const handleSubscribe = () => {
   const product = props.products.find(p => p.id === selectedProductId.value)
   if (product) {
-      window.open(product.attributes.buy_now_url, '_blank')
+      let url = product.attributes.buy_now_url
+      if (props.userEmail) {
+          // Check if URL already has query params
+          const separator = url.includes('?') ? '&' : '?'
+          url = `${url}${separator}checkout[email]=${encodeURIComponent(props.userEmail)}`
+      }
+      window.open(url, '_blank')
       // Close modal?
       emit('close')
   }
