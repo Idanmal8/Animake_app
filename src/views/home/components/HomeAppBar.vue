@@ -5,16 +5,17 @@
       <span class="home-app-bar__title">Animake</span>
     </div>
     <div class="home-app-bar__actions">
-      <div v-if="isSubscribed" class="home-app-bar__user-menu-wrapper" @click="isMenuOpen = !isMenuOpen">
+      <!-- User Menu (Visible for everyone) -->
+      <div class="home-app-bar__user-menu-wrapper" @click="isMenuOpen = !isMenuOpen">
           <div class="home-app-bar__user-icon">
             <User :size="24" />
           </div>
           
           <!-- Floating Menu -->
-          <!-- Floating Menu -->
           <Transition name="menu">
             <div v-if="isMenuOpen" class="home-app-bar__menu">
-                <button class="home-app-bar__menu-item" @click.stop="handleBillingClick">
+                <!-- Billing only for subscribed users -->
+                <button v-if="isSubscribed" class="home-app-bar__menu-item" @click.stop="handleBillingClick">
                     <span class="home-app-bar__menu-icon">💰</span>
                     Billing
                 </button>
@@ -25,7 +26,9 @@
             </div>
           </Transition>
       </div>
-      <div v-else class="home-app-bar__purchase-wrapper">
+
+      <!-- Purchase Button (Only for non-subscribed users) -->
+      <div v-if="!isSubscribed" class="home-app-bar__purchase-wrapper">
         <div v-if="trialUsage && trialUsage.remaining > 0" class="home-app-bar__trial-info">
              <span class="home-app-bar__trial-text">{{ trialUsage.remaining }} free generations left</span>
               <AppButton
@@ -156,6 +159,9 @@ onUnmounted(() => {
     align-self: center;
     justify-self: center;
     position: relative; // For menu positioning
+    gap: 1rem; /* Add gap between user icon and purchase button */
+    align-items: center;
+    flex-direction: row-reverse; /* Put purchase button first (left), user icon last (right) if that's preferred? user said "next to the purchase button". Usually user icon is far right. */
   }
 
   &__user-menu-wrapper {
@@ -240,7 +246,7 @@ onUnmounted(() => {
     max-width: 100%;
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 1050px) {
     justify-content: center;
 
     &__actions {

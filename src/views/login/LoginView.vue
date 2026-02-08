@@ -4,7 +4,18 @@
       <img :src="background" alt="background" />
     </div>
     <div class="login-page__login-container">
-      <h1>Login</h1>
+      <h1>{{ isSignUp ? 'Sign Up' : 'Login' }}</h1>
+      
+      <div v-if="isSignUp" class="login-page__form-group">
+        <InputField
+          label="Full Name"
+          v-model="fullName"
+          type="text"
+          placeholder="Full Name"
+          :rules="nameRules"
+        />
+      </div>
+
       <div class="login-page__form-group">
         <InputField
           label="Email"
@@ -25,27 +36,23 @@
       </div>
       <div class="login-page__form-group">
         <AppButton
-          title="Login"
+          :title="isSignUp ? 'Sign Up' : 'Login'"
           type="submit"
           :loading="loading"
           color="#000000"
           text-color="#ffffff"
           width="100%"
-          @click.prevent="handleLogin"
+          @click.prevent="handleSubmit"
         />
       </div>
 
-      <div class="login-page__form-group">
-        <AppButton
-          title="Log in with Google"
-          type="button"
-          color="#ffffff"
-          text-color="#000000"
-          border-color="#ccc"
-          :icon="googleIcon"
-          width="100%"
-          @click.prevent="handleLogin"
-        />
+      <div class="login-page__toggle-text">
+        <span v-if="isSignUp">
+          Already have an account? <a href="#" @click.prevent="toggleMode">Login</a>
+        </span>
+        <span v-else>
+          Don't have an account? <a href="#" @click.prevent="toggleMode">Sign Up</a>
+        </span>
       </div>
     </div>
   </div>
@@ -60,27 +67,46 @@ import InputField from '@/components/fields/InputField.vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import { ToastType } from '@/components/toasts/enums'
 import background from '@/assets/login/gradient-background.jpg'
-import googleIcon from '@/assets/icons/googleIcon.png'
 
 const router = useRouter()
 const loginStore = useLoginStore()
 const toastStore = useToastStore()
+
+const isSignUp = ref(false)
+const fullName = ref('')
 const email = ref('')
 const password = ref('')
 const loading = ref(false)
 
-const handleLogin = async () => {
+const toggleMode = () => {
+    isSignUp.value = !isSignUp.value
+    // Clear fields maybe?
+}
+
+const handleSubmit = async () => {
   loading.value = true
   loginStore.email = email.value
   loginStore.password = password.value
-  const success = await loginStore.login()
+  
+  let success = false
+  if (isSignUp.value) {
+      if (!fullName.value) {
+          toastStore.show('Error', 'Full Name is required', ToastType.Error)
+          loading.value = false
+          return
+      }
+      success = await loginStore.signUp(fullName.value)
+  } else {
+      success = await loginStore.login()
+  }
+
   loading.value = false
 
   if (success) {
-    toastStore.show('Success', 'Login successful! Redirecting...', ToastType.Success)
+    toastStore.show('Success', `${isSignUp.value ? 'Sign Up' : 'Login'} successful! Redirecting...`, ToastType.Success)
     router.push({ name: 'home' })
   } else {
-    toastStore.show('Error', 'Login failed. Please check your credentials.', ToastType.Error)
+    toastStore.show('Error', `${isSignUp.value ? 'Sign Up' : 'Login'} failed. Please check your details.`, ToastType.Error)
   }
 }
 
@@ -92,6 +118,10 @@ const emailRules = [
 const passwordRules = [
   (v: string) => !!v || 'Password is required',
   (v: string) => v.length >= 6 || 'Password must be at least 6 characters',
+]
+
+const nameRules = [
+    (v: string) => !!v || 'Name is required'
 ]
 </script>
 
@@ -147,6 +177,21 @@ input {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+  }
+  &__toggle-text {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+
+    a {
+      color: black;
+      font-weight: bold;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
     }
   }
 }

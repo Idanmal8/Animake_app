@@ -13,6 +13,27 @@ export const useLoginStore = defineStore('login', () => {
   const isSubscribed = ref(false)
   const subscription = ref<Subscription | null>(null)
 
+  const signUp = async (fullName: string) => {
+    try {
+      // 1. Register
+      const registerResponse = await authService.register({
+        email: email.value.trim(),
+        password: password.value.trim(),
+        fullName: fullName.trim(),
+      })
+
+      if (registerResponse) {
+        // 2. Login to get token
+        const loginSuccess = await login()
+        return loginSuccess
+      }
+      return false
+    } catch (error) {
+      console.error(error)
+      return false
+    }
+  }
+
   const login = async () => {
     try {
       const response = await authService.login({
@@ -142,5 +163,6 @@ export const useLoginStore = defineStore('login', () => {
     trialUsage,
     fetchTrialUsage,
     incrementTrialUsage,
+    signUp,
   }
 })
