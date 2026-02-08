@@ -32,7 +32,7 @@ const processCurrentFrame = async () => {
 
     const img = new Image()
     img.onload = async () => {
-        const size = canvasStore.selectedSize
+        const size = canvasStore.width
         
         // 1. Draw source
         const tempCanvas = document.createElement('canvas')
@@ -65,7 +65,7 @@ const downloadSpriteSheet = async () => {
 
     try {
         const selected = framesStore.selectedFrames
-        const size = canvasStore.selectedSize
+        const size = canvasStore.width
         const allFramesData: ImageData[] = []
 
         // Process all frames locally
@@ -161,7 +161,7 @@ onMounted(() => {
 onUnmounted(() => stopPreview())
 
 // SVG ViewBox
-const viewBox = computed(() => `0 0 ${canvasStore.selectedSize} ${canvasStore.selectedSize}`)
+const viewBox = computed(() => `0 0 ${canvasStore.width} ${canvasStore.height}`)
 </script>
 
 <template>
