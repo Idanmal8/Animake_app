@@ -30,12 +30,13 @@
 </template>
 
 <script setup lang="ts">
-import { defineComponent } from 'vue'
+import { defineComponent, watch } from 'vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import SpriteSheetPlayer from '@/components/display/SpriteSheetPlayer.vue'
 import sweatyCatSprite from '@/assets/sprites/sweaty_cat.webp'
+import { analyticsService } from '@/api/services/analytics'
 
-defineProps<{
+const props = defineProps<{
   isVisible: boolean
   retryAfter?: string | number
 }>()
@@ -47,6 +48,12 @@ const emit = defineEmits<{
 const handleClose = () => {
   emit('close')
 }
+
+watch(() => props.isVisible, (visible) => {
+  if (visible) {
+    analyticsService.track('rate_limit_shown', { retryAfter: props.retryAfter })
+  }
+})
 </script>
 
 <style scoped lang="scss">

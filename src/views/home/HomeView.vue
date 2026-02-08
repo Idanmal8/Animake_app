@@ -43,29 +43,36 @@ const handleShowPaywall = (payload?: { title?: string, description?: string }) =
     paywallTitle.value = payload?.title || ''
     paywallDescription.value = payload?.description || ''
     isPaywallOpen.value = true
+    analyticsService.track('paywall_shown', { title: payload?.title })
 }
 
 const handleContinueToSlicing = () => {
     currentStep.value = 'slicing'
+    analyticsService.track('flow_step_complete', { step: 'upload', next: 'slicing' })
 }
 
 const handleContinueToChromaKey = () => {
     currentStep.value = 'chroma-key'
+    analyticsService.track('flow_step_complete', { step: 'slicing', next: 'chroma_key' })
 }
 
 const handleContinueToCanvasPicker = () => {
     currentStep.value = 'canvas-picker'
+    analyticsService.track('flow_step_complete', { step: 'chroma_key', next: 'canvas_picker' })
 }
 
 const handleBackToUpload = () => {
+    analyticsService.track('flow_step_back', { from: 'slicing', to: 'upload' })
     currentStep.value = 'upload'
 }
 
 const handleBackToSlicing = () => {
+    analyticsService.track('flow_step_back', { from: 'chroma_key', to: 'slicing' })
     currentStep.value = 'slicing'
 }
 
 const handleBackToChromaKey = () => {
+    analyticsService.track('flow_step_back', { from: 'canvas_picker', to: 'chroma_key' })
     currentStep.value = 'chroma-key'
 }
 

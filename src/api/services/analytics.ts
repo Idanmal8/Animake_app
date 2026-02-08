@@ -6,7 +6,7 @@ class AnalyticsService {
   init() {
     if (typeof window !== 'undefined' && !this.initialized) {
       // PLACEHOLDER: Replace with actual API key
-      const apiKey = 'phc_pFc4oskiwCwA1nxMBh0bd9NRIPrLkvCS60npEAS7fTi'
+      const apiKey = import.meta.env.VITE_POSTHOG_KEY || ''
 
       posthog.init(apiKey, {
         api_host: 'https://eu.i.posthog.com', // or 'https://app.posthog.com' depending on region, default to US

@@ -5,6 +5,7 @@ import RangeSlider from '@/components/inputs/RangeSlider.vue'
 import AppButton from '@/components/buttons/AppButton.vue' // Assuming AppButton exists
 import { useVideoUploadStore } from '@/stores/video_upload/video_upload'
 import { useLoginStore } from '@/stores/login/login'
+import { analyticsService } from '@/api/services/analytics'
 import { ref, watch, computed } from 'vue'
 
 const store = useVideoUploadStore()
@@ -87,6 +88,12 @@ const handleContinue = () => {
 // Check trial consumption on file upload
 watch(() => store.videoFile, (file) => {
     if (file) {
+        analyticsService.track('video_selected', { 
+            name: file.name,
+            size: file.size,
+            type: file.type
+        })
+
         if (!loginStore.isSubscribed && loginStore.trialUsage && loginStore.trialUsage.remaining <= 0) {
             // Reset the file immediately
             store.reset()

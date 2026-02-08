@@ -10,18 +10,19 @@ export default defineConfig({
     vue({
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag === 'dotlottie-player'
-        }
-      }
+          isCustomElement: (tag) => tag === 'dotlottie-player',
+        },
+      },
     }),
     vueDevTools(),
   ],
   assetsInclude: ['**/*.lottie'],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  envDir: './src',
   // vite.config.js
   server: {
     proxy: {
@@ -33,9 +34,9 @@ export default defineConfig({
         // Add this to see exactly what Vite is doing in your terminal
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            console.log(`[Proxy] Forwarding: ${req.method} ${req.url} -> ${proxyReq.path}`);
-          });
-        }
+            console.log(`[Proxy] Forwarding: ${req.method} ${req.url} -> ${proxyReq.path}`)
+          })
+        },
       },
     },
   },
