@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { authService } from '@/api/services/auth'
+import { analyticsService } from '@/api/services/analytics'
 
 import { subscriptionService, type Subscription } from '@/api/services/subscription'
 import { paymentService } from '@/api/services/payment'
@@ -25,6 +26,9 @@ export const useLoginStore = defineStore('login', () => {
       if (registerResponse) {
         // 2. Login to get token
         const loginSuccess = await login()
+        if (loginSuccess) {
+          analyticsService.track('user_signed_up', { method: 'email' })
+        }
         return loginSuccess
       }
       return false
@@ -62,6 +66,13 @@ export const useLoginStore = defineStore('login', () => {
             subscription.value = null
           }
         }
+
+        // Identify User in PostHog
+        if (response.user) {
+          analyticsService.identify(response.user.id, response.user.email)
+          analyticsService.track('user_logged_in', { method: 'email' })
+        }
+
         return true
       }
       return false
@@ -119,6 +130,8 @@ export const useLoginStore = defineStore('login', () => {
     subscription.value = null
     email.value = ''
     password.value = ''
+
+    analyticsService.reset()
   }
 
   const trialUsage = ref<TrialUsageResponse | null>(null)

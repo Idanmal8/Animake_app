@@ -4,6 +4,9 @@ import { useChromaKeyStore } from '@/stores/chroma_key/chroma_key'
 import { useVideoFramesStore } from '@/stores/video_frames/video_frames'
 import { useSpritesStore } from '@/stores/sprites/sprites'
 import { useLoginStore } from '@/stores/login/login'
+import { useToastStore } from '@/stores/toast/toast'
+import { analyticsService } from '@/api/services/analytics'
+import { ToastType } from '@/components/toasts/enums'
 import { ref, onMounted, computed, watch, onUnmounted } from 'vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import GIF from 'gif.js'
@@ -217,10 +220,25 @@ const handleDownloadSpriteSheet = async () => {
         
         // Increment trial usage
         await loginStore.incrementTrialUsage()
+
+        // Track Event
+        analyticsService.track('sprite_sheet_generated', {
+            width,
+            height,
+            fps: framesStore.fps,
+            total_frames: framesStore.selectedFrames.length,
+            is_trial: !loginStore.isSubscribed
+        })
         
-    } catch (e) {
+    } catch (e: any) {
         console.error("Sprite sheet generation failed", e)
-        alert("Failed to generate Sprite Sheet: " + e)
+        // If it's a rate limit error, the modal is already shown globaly. 
+        // We can check the message or just show a generic error toast for other cases.
+        // For now, let's show an error toast, but maybe avoid it if we know it's 429?
+        // But since we can't easily parse the error object from here (it's a string in the throw usually or Error object),
+        // let's just use toast which is non-blocking.
+        const toastStore = useToastStore()
+        toastStore.show('Error', 'Failed to generate Sprite Sheet. Please try again.', ToastType.Error)
     } finally {
         isGenerating.value = false
         stopPreview() // Stop preview on success/completion

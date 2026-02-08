@@ -13,7 +13,11 @@ app.use(pinia)
 app.use(router)
 
 import { useThemeStore } from '@/stores/theme/theme'
+import { analyticsService } from '@/api/services/analytics'
+
 const themeStore = useThemeStore()
 themeStore.initTheme()
+
+analyticsService.init()
 
 app.mount('#app')

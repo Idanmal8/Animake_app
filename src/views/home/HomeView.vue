@@ -11,6 +11,7 @@ import BillingModal from '@/components/modals/BillingModal.vue'
 import { subscriptionService } from '@/api/services/subscription'
 import { useLoginStore } from '@/stores/login/login'
 import { useProductStore } from '@/stores/products/products'
+import { analyticsService } from '@/api/services/analytics'
 import { storeToRefs } from 'pinia'
 import { Loader2 } from 'lucide-vue-next'
 
@@ -70,6 +71,9 @@ const handleBackToChromaKey = () => {
 
 const handleSubscribe = async (cycle: 'monthly' | 'annually') => {
     if (!loginStore.userId) return // Should be logged in to see button? Or redirect to login
+    
+    analyticsService.track('purchase_clicked', { cycle })
+
     isSubscribing.value = true
     try {
         const sub = await subscriptionService.createSubscription({

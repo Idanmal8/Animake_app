@@ -27,6 +27,7 @@
     "imagetracerjs": "^1.2.6",
     "lucide-vue-next": "^0.563.0",
     "pinia": "^3.0.4",
+    "posthog-js": "^1.342.1",
     "reka-ui": "^2.7.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss-animate": "^1.0.7",

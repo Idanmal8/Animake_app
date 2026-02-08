@@ -9,7 +9,12 @@ export const useToastStore = defineStore('toast', () => {
   const type = ref<ToastType>(ToastType.Info)
   let timeoutId: ReturnType<typeof setTimeout> | null = null
 
-  const show = (newTitle: string, newMessage: string, newType: ToastType = ToastType.Info, duration = 3000) => {
+  const show = (
+    newTitle: string,
+    newMessage: string,
+    newType: ToastType = ToastType.Info,
+    duration = 3000,
+  ) => {
     title.value = newTitle
     message.value = newMessage
     type.value = newType
@@ -31,12 +36,29 @@ export const useToastStore = defineStore('toast', () => {
     }
   }
 
+  // Rate Limit Modal State
+  const isRateLimitModalVisible = ref(false)
+  const rateLimitRetryAfter = ref<string | number>(0)
+
+  const showRateLimitModal = (retryAfter: string | number) => {
+    rateLimitRetryAfter.value = retryAfter
+    isRateLimitModalVisible.value = true
+  }
+
+  const hideRateLimitModal = () => {
+    isRateLimitModalVisible.value = false
+  }
+
   return {
     visible,
     title,
     message,
     type,
     show,
-    hide
+    hide,
+    isRateLimitModalVisible,
+    rateLimitRetryAfter,
+    showRateLimitModal,
+    hideRateLimitModal,
   }
 })
