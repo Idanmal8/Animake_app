@@ -67,13 +67,36 @@ const onTimeUpdate = () => {
 }
 
 const handleSliderUpdate = (val: [number, number]) => {
-    store.setTrim(val[0], val[1])
-    // If user interacts with slider, pause preview or seek to start of new trim?
-    // User requested "preview loop button", so dragging shouldn't auto-play, 
-    // but maybe seek video to start handle if dragging left handle?
+    let [newStart, newEnd] = val
+    const MAX_DURATION = 3
+
+    // Determine which handle moved
+    const oldStart = store.startTime
+    const oldEnd = store.endTime
+    
+    // If user dragged START handle
+    if (Math.abs(newStart - oldStart) > 0.01) {
+        if (newEnd - newStart > MAX_DURATION) {
+            newEnd = newStart + MAX_DURATION
+        }
+    } 
+    // If user dragged END handle
+    else if (Math.abs(newEnd - oldEnd) > 0.01) {
+        if (newEnd - newStart > MAX_DURATION) {
+            newStart = newEnd - MAX_DURATION
+        }
+    }
+    // Edges case: pushed both or initial clamp? Just clamp end.
+    if (newEnd - newStart > MAX_DURATION) {
+        newEnd = newStart + MAX_DURATION
+    }
+
+    store.setTrim(newStart, newEnd)
+
+    // Seek preview if start changed significantly
     if (videoRef.value) {
-        if (Math.abs(videoRef.value.currentTime - val[0]) > 0.5) {
-             videoRef.value.currentTime = val[0]
+        if (Math.abs(videoRef.value.currentTime - newStart) > 0.5) {
+             videoRef.value.currentTime = newStart
         }
     }
 }
