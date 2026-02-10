@@ -11,7 +11,9 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   const useLocalApi = env.VITE_USE_LOCAL_API === 'false'
-  const target = useLocalApi ? 'http://localhost:3000' : 'https://animake-backend.onrender.com'
+  const target = useLocalApi
+    ? 'http://localhost:3000'
+    : 'https://animake-api-997459958439.europe-west1.run.app'
 
   console.log(`[Vite] Proxying /api to: ${target}`)
 
