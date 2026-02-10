@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted } from 'vue'
 import gsap from 'gsap'
 import AppButton from '@/components/buttons/AppButton.vue'
+import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
 import SpriteSheetPlayer from '@/components/display/SpriteSheetPlayer.vue'
 import dogSprite from '@/assets/sprites/dog_sprite.png'
 import ghostSprite from '@/assets/sprites/ghost1.png'
@@ -89,6 +90,7 @@ const animations: SpriteAnimation[] = [
         <header class="corporate-site__header">
             <div class="corporate-site__logo">Animake</div>
             <nav class="corporate-site__nav">
+                 <ThemeToggle />
                  <AppButton 
                     title="Sign In" 
                     variant="ghost" 
