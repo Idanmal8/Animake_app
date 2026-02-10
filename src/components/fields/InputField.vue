@@ -8,12 +8,14 @@ interface Props {
   type?: string
   errorMessage?: string
   rules?: Array<(value: any) => string | boolean>
+  dark?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: 'text',
   id: () => `input-${Math.random().toString(36).substr(2, 9)}`,
   rules: () => [],
+  dark: false,
 })
 
 const model = defineModel<string | number>()
@@ -40,14 +42,14 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
 </script>
 
 <template>
-  <div class="input-field">
+  <div class="input-field" :class="{ 'is-dark': dark }">
     <label :for="id" class="label">{{ label }}</label>
     <input
       :id="id"
       v-model="model"
       :type="type"
       :placeholder="placeholder"
-      :class="{ 'has-error': displayError }"
+      :class="{ 'has-error': displayError, 'dark-input': dark }"
       class="input"
       @blur="validate"
     />
@@ -60,6 +62,12 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   display: flex;
   flex-direction: column;
   min-width: 300px;
+  
+  &.is-dark {
+      .label {
+          color: #ffffff;
+      }
+  }
 }
 
 .label {
@@ -92,6 +100,20 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   &.has-error {
     margin-bottom: 0.5rem;
     border-color: #ad262d;
+  }
+  
+  &.dark-input {
+      background-color: #1a1a1a;
+      color: white;
+      border: 1px solid #333;
+      
+      &:focus {
+          border-color: white;
+      }
+      
+      &::placeholder {
+          color: #666;
+      }
   }
 }
 

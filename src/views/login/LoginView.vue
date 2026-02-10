@@ -13,6 +13,7 @@
           type="text"
           placeholder="Full Name"
           :rules="nameRules"
+          dark
         />
       </div>
 
@@ -23,6 +24,7 @@
           type="email"
           placeholder="Email"
           :rules="emailRules"
+          dark
         />
       </div>
       <div class="login-page__form-group">
@@ -32,6 +34,7 @@
           type="password"
           placeholder="Password"
           :rules="passwordRules"
+          dark
         />
       </div>
       <div class="login-page__form-group">
@@ -39,8 +42,8 @@
           :title="isSignUp ? 'Sign Up' : 'Login'"
           type="submit"
           :loading="loading"
-          color="#000000"
-          text-color="#ffffff"
+          color="#ffffff"
+          text-color="#000000"
           width="100%"
           @click.prevent="handleSubmit"
         />
@@ -127,7 +130,8 @@ const nameRules = [
 
 <style scoped lang="scss">
 h1 {
-  color: black;
+  font-size: x-large;
+  color: white;
 }
 
 input {
@@ -146,7 +150,8 @@ input {
   gap: 1rem;
   padding: 1rem;
   box-sizing: border-box;
-  background-color: white;
+  background-color: black;
+  color: white;
 
   &__login-container {
     display: flex;
@@ -185,7 +190,7 @@ input {
     color: #666;
 
     a {
-      color: black;
+      color: white;
       font-weight: bold;
       text-decoration: none;
 
