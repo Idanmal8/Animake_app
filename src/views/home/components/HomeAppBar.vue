@@ -81,8 +81,7 @@ const handleBillingClick = () => {
 const handleLogout = () => {
     isMenuOpen.value = false
     loginStore.logout()
-    // Force a full reload to clear memory state and ensure clean login
-    window.location.replace('/login')
+    router.push({ name: 'login' })
 }
 
 // Simple click outside detection
