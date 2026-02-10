@@ -5,18 +5,34 @@ import RangeSlider from '@/components/inputs/RangeSlider.vue'
 import AppButton from '@/components/buttons/AppButton.vue' // Assuming AppButton exists
 import { useVideoUploadStore } from '@/stores/video_upload/video_upload'
 import { useLoginStore } from '@/stores/login/login'
+import { useToastStore } from '@/stores/toast/toast'
+import { ToastType } from '@/components/toasts/enums'
 import { analyticsService } from '@/api/services/analytics'
 import { ref, watch, computed } from 'vue'
 
 const store = useVideoUploadStore()
 const loginStore = useLoginStore()
+const toastStore = useToastStore()
 const videoRef = ref<HTMLVideoElement | null>(null)
 
 const aspectRatio = ref(1.77) // Default 16:9
 
 const onLoadedMetadata = () => {
   if (videoRef.value) {
-    store.setDuration(videoRef.value.duration)
+    const dur = videoRef.value.duration
+    
+    // Restriction: Max 20 seconds
+    if (dur > 20) {
+        toastStore.show(
+            'Video too long',
+            'Please upload a video shorter than 20 seconds.',
+            ToastType.Error
+        )
+        store.reset()
+        return
+    }
+
+    store.setDuration(dur)
     aspectRatio.value = videoRef.value.videoWidth / videoRef.value.videoHeight
   }
 }

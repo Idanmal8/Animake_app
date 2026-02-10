@@ -150,7 +150,7 @@ watch(() => store.isGenerating, (val) => {
                     <input 
                         type="range" 
                         min="24" 
-                        max="60" 
+                        max="32" 
                         step="1" 
                         :value="localFps" 
                         @input="(e) => localFps = Number((e.target as HTMLInputElement).value)"

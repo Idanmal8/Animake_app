@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import gsap from 'gsap'
 import AppButton from '@/components/buttons/AppButton.vue'
 import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
@@ -10,6 +10,17 @@ import ghostSprite from '@/assets/sprites/ghost1.png'
 
 const router = useRouter()
 
+const isAuthenticated = computed(() => !!localStorage.getItem('token'))
+
+const handleTryIt = () => {
+    if (isAuthenticated.value) {
+        router.push({ name: 'home' })
+    } else {
+        router.push({ name: 'login' })
+    }
+}
+
+// ... existing refs and onMounted ...
 const heroTitle = ref<HTMLElement | null>(null)
 const heroText = ref<HTMLElement | null>(null)
 const heroCta = ref<HTMLElement | null>(null)
@@ -56,10 +67,6 @@ onMounted(() => {
     }, '-=0.5') // Start slightly before the very end of staggered entrance
 })
 
-const handleTryIt = () => {
-    router.push({ name: 'login' })
-}
-
 interface SpriteAnimation {
     id: number
     src: string
@@ -92,16 +99,18 @@ const animations: SpriteAnimation[] = [
             <nav class="corporate-site__nav">
                  <ThemeToggle />
                  <AppButton 
+                    v-if="!isAuthenticated"
                     title="Sign In" 
                     variant="ghost" 
                     @click="handleTryIt"
                  />
                  <AppButton 
-                    title="Try It Free" 
+                    :title="isAuthenticated ? 'Go to Animator' : 'Try It Free'" 
                     @click="handleTryIt"
                  />
             </nav>
         </header>
+
 
         <main class="corporate-site__main">
             <section class="corporate-site__hero">
