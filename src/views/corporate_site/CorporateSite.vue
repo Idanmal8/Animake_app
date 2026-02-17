@@ -154,6 +154,9 @@ const animations: SpriteAnimation[] = [
         
         <footer class="corporate-site__footer">
             <p>&copy; 2026 Animake. All rights reserved.</p>
+            <div class="corporate-site__terms">
+                <RouterLink to="/terms">Terms and Conditions</RouterLink>
+            </div>
         </footer>
     </div>
 </template>
@@ -286,6 +289,17 @@ const animations: SpriteAnimation[] = [
         text-align: center;
         color: hsl(var(--muted-foreground));
         font-size: 0.875rem;
+
+        .corporate-site__terms {
+            margin-top: 0.5rem;
+            a {
+                color: inherit;
+                text-decoration: none;
+                &:hover {
+                    text-decoration: underline;
+                }
+            }
+        }
     }
 }
 </style>

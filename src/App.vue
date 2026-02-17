@@ -31,4 +31,5 @@ const toastStore = useToastStore()
   left: 2rem;
   z-index: 1000;
 }
+
 </style>

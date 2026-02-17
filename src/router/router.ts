@@ -32,6 +32,11 @@ const router = createRouter({
       name: 'corporate-site',
       component: routes.CorporateSite,
     },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: routes.TermsAndConditions,
+    },
   ],
 })
 

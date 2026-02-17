@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { Eye, EyeOff } from 'lucide-vue-next'
 
 interface Props {
   label: string
@@ -20,6 +21,18 @@ const props = withDefaults(defineProps<Props>(), {
 
 const model = defineModel<string | number>()
 const innerErrorMessage = ref<string>('')
+const showPassword = ref(false)
+
+const inputType = computed(() => {
+    if (props.type === 'password' && showPassword.value) {
+        return 'text'
+    }
+    return props.type
+})
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value
+}
 
 const validate = () => {
   innerErrorMessage.value = ''
@@ -44,15 +57,27 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
 <template>
   <div class="input-field" :class="{ 'is-dark': dark }">
     <label :for="id" class="label">{{ label }}</label>
-    <input
-      :id="id"
-      v-model="model"
-      :type="type"
-      :placeholder="placeholder"
-      :class="{ 'has-error': displayError, 'dark-input': dark }"
-      class="input"
-      @blur="validate"
-    />
+    <div class="input-wrapper">
+        <input
+        :id="id"
+        v-model="model"
+        :type="inputType"
+        :placeholder="placeholder"
+        :class="{ 'has-error': displayError, 'dark-input': dark, 'has-icon': type === 'password' }"
+        class="input"
+        @blur="validate"
+        />
+        <button 
+            v-if="type === 'password'" 
+            type="button"
+            class="toggle-password" 
+            @click="togglePasswordVisibility"
+            tabindex="-1"
+        >
+            <EyeOff v-if="showPassword" :size="20" />
+            <Eye v-else :size="20" />
+        </button>
+    </div>
     <span v-if="displayError" class="error-message">{{ displayError }}</span>
   </div>
 </template>
@@ -77,6 +102,11 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   margin-bottom: 0.5rem;
 }
 
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
 .input {
   padding: 0.5rem;
   border: 1px solid transparent;
@@ -85,6 +115,10 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   font-size: 1rem;
   transition: border-color 0.2s;
   width: 100%;
+
+  &.has-icon {
+      padding-right: 2.5rem; /* Space for the eye icon */
+  }
 
   &::placeholder {
     color: #9ca3af;
@@ -98,7 +132,8 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   }
 
   &.has-error {
-    margin-bottom: 0.5rem;
+    /* Reduce or remove margin-bottom to not affect wrapper height for absolute positioning calc */
+    margin-bottom: 0; 
     border-color: #ad262d;
   }
   
@@ -117,8 +152,35 @@ const displayError = computed(() => props.errorMessage || innerErrorMessage.valu
   }
 }
 
+.toggle-password {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &:hover {
+        color: #666;
+    }
+}
+
+.is-dark .toggle-password {
+    color: #666;
+    &:hover {
+        color: #999;
+    }
+}
+
 .error-message {
   font-size: 0.8rem;
   color: #ad262d;
+  margin-top: 0.5rem;
 }
 </style>
