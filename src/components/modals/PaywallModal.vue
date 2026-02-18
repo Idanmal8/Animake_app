@@ -57,8 +57,8 @@
             </div>
             <div class="paywall-modal__plan-right">
               <div class="paywall-modal__plan-price">
-                  {{ calculateMonthlyPrice(product) }} 
-                  <span class="paywall-modal__plan-period">/ mo</span>
+                  {{ product.attributes.price_formatted }} 
+                  <span class="paywall-modal__plan-period">/ one time</span>
               </div>
             </div>
           </div>

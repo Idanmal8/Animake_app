@@ -5,13 +5,13 @@ const steps = [
   {
     icon: Sparkles,
     title: 'Generate Sprite Artwork',
-    description: 'Generate your Sprite Artwork with OpenArt (or similar).',
+    description: 'Generate your Sprite Artwork with Gemini/Sora/OpenArt (or similar).',
     tip: 'TIP: generate with a SOLID color background like a green screen.',
   },
   {
     icon: Video,
     title: 'Animate with AI',
-    description: 'Animate your art with Animake, Kling, WAN, or Grok.',
+    description: 'Animate your art with Veo, Kling, WAN, or Grok.',
   },
   {
     icon: Upload,
