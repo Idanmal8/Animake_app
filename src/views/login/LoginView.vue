@@ -69,7 +69,7 @@ import { useToastStore } from '@/stores/toast/toast'
 import InputField from '@/components/fields/InputField.vue'
 import AppButton from '@/components/buttons/AppButton.vue'
 import { ToastType } from '@/components/toasts/enums'
-import background from '@/assets/login/gradient-background.jpg'
+import background from '@/assets/login/parabolic-triangle.svg'
 
 const router = useRouter()
 const loginStore = useLoginStore()

@@ -4,9 +4,6 @@ import { ref, onMounted, computed } from 'vue'
 import gsap from 'gsap'
 import AppButton from '@/components/buttons/AppButton.vue'
 import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
-import SpriteSheetPlayer from '@/components/display/SpriteSheetPlayer.vue'
-import dogSprite from '@/assets/sprites/dog_sprite.png'
-import ghostSprite from '@/assets/sprites/ghost1.png'
 
 const router = useRouter()
 
@@ -24,8 +21,7 @@ const handleTryIt = () => {
 const heroTitle = ref<HTMLElement | null>(null)
 const heroText = ref<HTMLElement | null>(null)
 const heroCta = ref<HTMLElement | null>(null)
-const spriteCards = ref<HTMLElement[]>([])
-const areSpritesPlaying = ref<boolean[]>(new Array(1).fill(false)) // Track playing state per card
+const heroVideo = ref<HTMLElement | null>(null)
 
 onMounted(() => {
     const tl = gsap.timeline()
@@ -48,48 +44,13 @@ onMounted(() => {
         duration: 0.8,
         ease: 'power3.out'
     }, '-=0.6')
-    .from(spriteCards.value, {
+    .from(heroVideo.value, {
         y: 50,
         opacity: 0,
         duration: 0.8,
-        stagger: 0.15,
         ease: 'power3.out'
     }, '-=0.4')
-
-    // Start playing sprites only after the heavy entrance animation is mostly done
-    // to prevent main-thread fighting (GSAP vs Paint).
-    tl.to({}, {
-        duration: 0.1,
-        onComplete: () => {
-            // Trigger all sprites to start playing
-            areSpritesPlaying.value = areSpritesPlaying.value.map(() => true)
-        }
-    }, '-=0.5') // Start slightly before the very end of staggered entrance
 })
-
-interface SpriteAnimation {
-    id: number
-    src: string
-    frameWidth: number
-    frameHeight: number
-    totalFrames: number
-    cols: number
-    rows: number
-    fps: number
-}
-
-const animations: SpriteAnimation[] = [
-    {
-        id: 1,
-        src: ghostSprite,
-        frameWidth: 1024,
-        frameHeight: 1024,
-        totalFrames: 70,
-        cols: 16,
-        rows: 5,
-        fps: 24
-    },
-]
 </script>
 
 <template>
@@ -129,24 +90,20 @@ const animations: SpriteAnimation[] = [
                 </div>
 
                 <div class="corporate-site__hero-visual">
-                    <div class="sprites-grid">
-                        <div 
-                            v-for="(anim, index) in animations" 
-                            :key="anim.id" 
-                            class="sprite-card"
-                            ref="spriteCards"
+                    <div class="video-container" ref="heroVideo">
+                        <!-- Placeholder video until user provides one -->
+                        <video 
+                            autoplay 
+                            loop 
+                            muted 
+                            playsinline 
+                            class="hero-video"
+                            poster="https://placehold.co/600x400/1a1a1a/ffffff?text=Video+Placeholder"
                         >
-                            <SpriteSheetPlayer 
-                                :src="anim.src"
-                                :frame-width="anim.frameWidth"
-                                :frame-height="anim.frameHeight"
-                                :total-frames="anim.totalFrames"
-                                :cols="anim.cols"
-                                :rows="anim.rows"
-                                :fps="anim.fps"
-                                :playing="areSpritesPlaying[index]"
-                            />
-                        </div>
+                            <!-- <source src="@/assets/your-video.mp4" type="video/mp4"> -->
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="video-overlay"></div>
                     </div>
                 </div>
             </section>
@@ -255,33 +212,30 @@ const animations: SpriteAnimation[] = [
         // max-width: 500px; // Let it expand for the grid
     }
 
-    .sprites-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-        gap: 1.5rem;
+    .video-container {
         width: 100%;
         max-width: 800px;
+        aspect-ratio: 16/9;
+        border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+        border: 1px solid hsl(var(--border));
+        background-color: hsl(var(--card));
     }
 
-    .sprite-card {
-        aspect-ratio: 1;
-        border-radius: 16px;
-        background: hsl(var(--card));
-        border: 1px solid hsl(var(--border));
-        padding: 1rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-        transition: transform 0.2s, box-shadow 0.2s;
-        will-change: transform, opacity;
-        transform: translateZ(0); /* Force GPU layer */
-        backface-visibility: hidden;
+    .hero-video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
 
-        &:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
-        }
+    .video-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, transparent 80%, rgba(0,0,0,0.2));
+        pointer-events: none;
     }
 
     &__footer {
