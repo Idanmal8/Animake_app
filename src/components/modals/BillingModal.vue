@@ -19,8 +19,12 @@
                 <span class="billing-modal__value status-active" v-if="subscription.isActive">Active</span>
                 <span class="billing-modal__value status-inactive" v-else>Inactive</span>
             </div>
-             <div class="billing-modal__row">
+             <div class="billing-modal__row" v-if="subscription.isActive && subscription.autoRenewal">
                 <span class="billing-modal__label">Need to renew:</span>
+                <span class="billing-modal__value">{{ formatDate(subscription.endDate) }}</span>
+            </div>
+             <div class="billing-modal__row" v-else-if="subscription.isActive && !subscription.autoRenewal">
+                <span class="billing-modal__label">Expires on:</span>
                 <span class="billing-modal__value">{{ formatDate(subscription.endDate) }}</span>
             </div>
         </div>
@@ -40,6 +44,11 @@
              <p class="billing-modal__cancel-note">
                 Your subscription will remain active until the end of the current billing period.
             </p>
+        </div>
+        <div class="billing-modal__footer" v-else-if="subscription && subscription.isActive && !subscription.autoRenewal">
+             <div class="billing-modal__canceled-notice">
+                 Your subscription has been canceled. The cancellation will take effect on the renewal date: <strong>{{ formatDate(subscription.endDate) }}</strong>.
+             </div>
         </div>
       </div>
     </div>
@@ -193,6 +202,23 @@ const formatDate = (dateString: string) => {
       color: hsl(var(--muted-foreground));
       text-align: center;
       margin-top: 0.5rem;
+  }
+
+  &__canceled-notice {
+      font-size: 0.875rem;
+      color: #d97706; // amber-600
+      text-align: center;
+      margin-top: 0.5rem;
+      background: rgba(245, 158, 11, 0.1);
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      line-height: 1.4;
+      
+      strong {
+          font-weight: 600;
+          color: #b45309; // amber-700
+      }
   }
 }
 </style>
