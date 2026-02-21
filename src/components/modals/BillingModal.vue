@@ -14,10 +14,10 @@
                 <span class="billing-modal__label">Plan:</span>
                 <span class="billing-modal__value capitalize">{{ subscription.cycle }}</span>
             </div>
-            <div class="billing-modal__row">
+             <div class="billing-modal__row">
                 <span class="billing-modal__label">Status:</span>
                 <span class="billing-modal__value status-active" v-if="subscription.isActive">Active</span>
-                <span class="billing-modal__value status-inactive" v-else>Inactive</span>
+                <span class="billing-modal__value status-inactive" v-else>Expired</span>
             </div>
              <div class="billing-modal__row" v-if="subscription.isActive && subscription.autoRenewal">
                 <span class="billing-modal__label">Need to renew:</span>
@@ -25,6 +25,10 @@
             </div>
              <div class="billing-modal__row" v-else-if="subscription.isActive && !subscription.autoRenewal">
                 <span class="billing-modal__label">Expires on:</span>
+                <span class="billing-modal__value">{{ formatDate(subscription.endDate) }}</span>
+            </div>
+             <div class="billing-modal__row" v-else>
+                <span class="billing-modal__label">Expired on:</span>
                 <span class="billing-modal__value">{{ formatDate(subscription.endDate) }}</span>
             </div>
         </div>
