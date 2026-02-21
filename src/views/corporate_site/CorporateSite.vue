@@ -4,14 +4,26 @@ import { ref, onMounted, computed } from 'vue'
 import gsap from 'gsap'
 import AppButton from '@/components/buttons/AppButton.vue'
 import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
+import { authService } from '@/api/services/auth'
 
 const router = useRouter()
 
 const isAuthenticated = computed(() => !!localStorage.getItem('token'))
 
-const handleTryIt = () => {
+const handleTryIt = async () => {
     if (isAuthenticated.value) {
-        router.push({ name: 'home' })
+        try {
+            const response = await authService.refresh()
+            localStorage.setItem('token', response.access_token)
+            localStorage.setItem('user', JSON.stringify(response.user))
+            router.push({ name: 'home' })
+        } catch (error) {
+            // The 401 interceptor in httpClient might already redirect,
+            // but we add this as a fallback safety.
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            router.push({ name: 'login' })
+        }
     } else {
         router.push({ name: 'login' })
     }

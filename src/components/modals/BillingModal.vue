@@ -20,22 +20,13 @@
                 <span class="billing-modal__value status-inactive" v-else>Inactive</span>
             </div>
              <div class="billing-modal__row">
-                <span class="billing-modal__label">Renewal:</span>
+                <span class="billing-modal__label">Need to renew:</span>
                 <span class="billing-modal__value">{{ formatDate(subscription.endDate) }}</span>
-            </div>
-             <div class="billing-modal__row" v-if="subscription.autoRenewal">
-                <span class="billing-modal__label">Auto-renew:</span>
-                <span class="billing-modal__value text-green">On</span>
-            </div>
-             <div class="billing-modal__row" v-else>
-                <span class="billing-modal__label">Auto-renew:</span>
-                <span class="billing-modal__value text-red">Off</span>
             </div>
         </div>
         <div v-else class="billing-modal__empty">
             No active subscription found.
         </div>
-
         <div class="billing-modal__footer" v-if="subscription && subscription.isActive && subscription.autoRenewal">
              <AppButton
                 title="Cancel Subscription"

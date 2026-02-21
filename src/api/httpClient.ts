@@ -47,6 +47,11 @@ class HttpClient {
           const retryAfter = response.headers.get('Retry-After')
           const toastStore = useToastStore()
           toastStore.showRateLimitModal(retryAfter || 0)
+        } else if (response.status === 401 && !endpoint.includes('/auth/login')) {
+          // Global 401 interceptor (ignore 401s on the login page itself)
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          window.location.hash = '#/login'
         }
 
         const errorText = await response.text()
