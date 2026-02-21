@@ -316,15 +316,24 @@ const handleCustomDimension = (dim: 'w' | 'h', event: Event) => {
 }
 
 const flutterCode = computed(() => {
-    if (!generatedMetadata.value) return ''
-    const nameWithoutExt = generatedFilename.value.replace(/\.png$/i, '')
-    
     return `import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 
 class MyGame extends FlameGame {
+  final String spriteSheetName;
+  final int amountPerRow;
+  final int amount;
+  final int rows;
+
+  MyGame({
+    required this.spriteSheetName,
+    required this.amountPerRow,
+    required this.amount,
+    required this.rows,
+  });
+
   @override
   Color backgroundColor() => const Color.fromARGB(0, 255, 255, 255);
 
@@ -333,22 +342,13 @@ class MyGame extends FlameGame {
     debugMode = false; // Enables FPS counter and hitboxes
 
     // 1. Load the sprite sheet image
-    final spriteSheet = await images.load('${nameWithoutExt}.png');
-
-    // 2. Create the animation data
-    final int amountPerRow = ${generatedMetadata.value.cols};
-    final int amount = ${framesStore.selectedFrames.length};
+    final spriteSheet = await images.load(spriteSheetName);
 
     // Calculate frame size from total sheet size
-    // sheetWidth / cols, sheetHeight / rows
-    // Or just use the known frameWidth/Height from metadata if available (it is).
-    // But for safety:
     final frameWidth = spriteSheet.width / amountPerRow;
-    // For rows, we need to know rows count or calculate?
-    // Metadata has rows.
-    final int rows = ${generatedMetadata.value.rows};
     final frameHeight = spriteSheet.height / rows;
 
+    // 2. Create the animation data
     final animation = SpriteAnimation.fromFrameData(
       spriteSheet,
       SpriteAnimationData.sequenced(
@@ -374,11 +374,21 @@ class MyGame extends FlameGame {
 })
 
 const flutterWidgetCode = computed(() => {
+    if (!generatedMetadata.value) return ''
+    const nameWithoutExt = generatedFilename.value.replace(/\.png$/i, '')
+    
     return `return Center(
   child: SizedBox(
     width: ${canvasStore.width}, // Size of the sprite
     height: ${canvasStore.height}, // Size of the sprite
-    child: GameWidget(game: MyGame()),
+    child: GameWidget(
+      game: MyGame(
+        spriteSheetName: '${nameWithoutExt}.png',
+        amountPerRow: ${generatedMetadata.value.cols},
+        amount: ${framesStore.selectedFrames.length},
+        rows: ${generatedMetadata.value.rows},
+      ),
+    ),
   ),
 );`
 })
