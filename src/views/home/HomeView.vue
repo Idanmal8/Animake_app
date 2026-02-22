@@ -12,21 +12,37 @@ import { subscriptionService } from '@/api/services/subscription'
 import { useLoginStore } from '@/stores/login/login'
 import { useProductStore } from '@/stores/products/products'
 import { analyticsService } from '@/api/services/analytics'
-import { storeToRefs } from 'pinia'
 import { Loader2 } from 'lucide-vue-next'
 
 const loginStore = useLoginStore()
 const productStore = useProductStore()
 const isLoading = ref(true)
-const { isInitializing } = storeToRefs(loginStore)
 const currentStep = ref<'upload' | 'slicing' | 'chroma-key' | 'canvas-picker'>('upload')
+
+const refreshSubscription = async () => {
+    if (loginStore.userId) {
+        try {
+            const freshSub = await subscriptionService.getSubscription(loginStore.userId)
+            if (freshSub) {
+                loginStore.isSubscribed = freshSub.isActive
+                loginStore.subscription = freshSub
+                if (freshSub.isActive) {
+                    isPaywallOpen.value = false
+                }
+            }
+        } catch (e) {
+            console.error('Failed to refresh subscription', e)
+        }
+    }
+}
 
 onMounted(async () => {
     try {
         await loginStore.initialize()
         await Promise.all([
             productStore.fetchProducts(),
-            loginStore.fetchTrialUsage()
+            loginStore.fetchTrialUsage(),
+            refreshSubscription()
         ])
     } finally {
         isLoading.value = false
