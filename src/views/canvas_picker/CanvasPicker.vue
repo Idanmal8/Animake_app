@@ -450,7 +450,7 @@ const openCloudConvert = () => {
                     <div class="category-label">Square</div>
                     <div class="canvas-picker__sizes-pick">
                         <button 
-                            v-for="size in [24, 32, 48, 64, 128, 256, 512, 1024]" 
+                            v-for="size in [24, 32, 48, 64, 128, 256, 512]" 
                             :key="size"
                             class="size-chip"
                             :class="{ 'is-selected': canvasStore.width === size && canvasStore.height === size }"
