@@ -103,19 +103,14 @@ onMounted(() => {
 
                 <div class="corporate-site__hero-visual">
                     <div class="video-container" ref="heroVideo">
-                        <!-- Placeholder video until user provides one -->
-                        <video 
-                            autoplay 
-                            loop 
-                            muted 
-                            playsinline 
+                        <iframe 
                             class="hero-video"
-                            poster="https://placehold.co/600x400/1a1a1a/ffffff?text=Video+Placeholder"
-                        >
-                            <!-- <source src="@/assets/your-video.mp4" type="video/mp4"> -->
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="video-overlay"></div>
+                            src="https://www.youtube.com/embed/iYk9F83ycXU?controls=1&rel=0" 
+                            title="Animake Demo Video" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowfullscreen
+                        ></iframe>
                     </div>
                 </div>
             </section>
