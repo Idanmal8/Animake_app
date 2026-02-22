@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   console.log(`[Vite] Proxying /api to: ${target}`)
 
   return {
-    base: '/Animake_app/',
+    base: '/',
     plugins: [
       vue({
         template: {
