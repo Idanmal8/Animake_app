@@ -90,7 +90,9 @@ export const useLoginStore = defineStore('login', () => {
     console.log(storedUser)
 
     try {
+      console.log('initializing')
       if (token && storedUser) {
+        console.log('token and user found')
         try {
           const user = JSON.parse(storedUser)
           if (user && user.id) {
