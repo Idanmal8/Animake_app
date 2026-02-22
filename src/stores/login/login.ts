@@ -86,7 +86,6 @@ export const useLoginStore = defineStore('login', () => {
 
   const initialize = async () => {
     const token = localStorage.getItem('token')
-    console.log(token)
     const storedUser = localStorage.getItem('user')
     console.log(storedUser)
 
