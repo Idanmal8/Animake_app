@@ -147,10 +147,6 @@ const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
 const handleSubscribe = () => {
   const product = props.products.find(p => p.id === selectedProductId.value)
   if (product) {
-      // Determine cycle to pass into the DTO if needed
-      const cycle = (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) 
-          ? 'annually' 
-          : 'monthly'
           
       let url = product.attributes.buy_now_url
       if (props.userEmail) {
@@ -160,8 +156,6 @@ const handleSubscribe = () => {
       }
       window.open(url, '_blank')
       
-      // Emit the subscribe event with the correct cycle DTO parameter
-      emit('subscribe', cycle)
       // Close modal?
       emit('close')
   }
