@@ -111,8 +111,8 @@ const selectedProductId = ref<string>('')
 // Auto-select first product or specific default
 watch(() => props.products, (newProducts) => {
     if (newProducts.length > 0 && !selectedProductId.value) {
-        // Prefer yearly or first
-        const yearly = newProducts.find(p => p.id === SubscriptionType.Yearly)
+        // Prefer yearly or test or first
+        const yearly = newProducts.find(p => p.id === SubscriptionType.Yearly || p.id === SubscriptionType.Test)
         selectedProductId.value = yearly ? yearly.id : newProducts[0]!.id
     }
 }, { immediate: true })
@@ -129,7 +129,7 @@ const close = () => {
 
 const getDurationLabel = (product: LemonSqueezyProductData) => {
     if (product.id === SubscriptionType.Monthly) return '1 Month'
-    if (product.id === SubscriptionType.Yearly) return '12 Months'
+    if (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) return '12 Months'
     return product.attributes.name
 }
 
@@ -137,7 +137,7 @@ const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
     // This is a rough estimation for display. 
     // Ideally we rely on what the API says or just divideprice
     const price = product.attributes.price / 100
-    if (product.id === SubscriptionType.Yearly) {
+    if (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) {
         return '₪' + (price / 12).toFixed(2)
     }
     return '₪' + price.toFixed(2)
@@ -147,6 +147,11 @@ const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
 const handleSubscribe = () => {
   const product = props.products.find(p => p.id === selectedProductId.value)
   if (product) {
+      // Determine cycle to pass into the DTO if needed
+      const cycle = (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) 
+          ? 'annually' 
+          : 'monthly'
+          
       let url = product.attributes.buy_now_url
       if (props.userEmail) {
           // Check if URL already has query params
@@ -154,6 +159,9 @@ const handleSubscribe = () => {
           url = `${url}${separator}checkout[email]=${encodeURIComponent(props.userEmail)}`
       }
       window.open(url, '_blank')
+      
+      // Emit the subscribe event with the correct cycle DTO parameter
+      emit('subscribe', cycle)
       // Close modal?
       emit('close')
   }
