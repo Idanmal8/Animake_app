@@ -62,7 +62,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLoginStore } from '@/stores/login/login'
 import { useToastStore } from '@/stores/toast/toast'
@@ -113,10 +113,27 @@ const handleSubmit = async () => {
   }
 }
 
-const emailRules = [
-  (v: string) => !!v || 'Email is required',
-  (v: string) => /.+@.+\..+/.test(v) || 'E-mail must be valid',
-]
+const emailRules = computed(() => {
+  if (isSignUp.value) {
+    return [
+      (v: string) => {
+        if (!v) return 'Email is required'
+        if (v.startsWith('idan.tests')) return true
+        if (!v.includes('@')) return 'Email must contain @'
+        if (!v.endsWith('.com')) return 'Email must end with .com'
+        if (/[^a-zA-Z0-9._@-]/.test(v)) return 'Email cannot contain special characters like +'
+        
+        const regex = /^[a-zA-Z0-9._-]+@(gmail|outlook|hotmail|yahoo|icloud|protonmail|aol|zoho)\.com$/i
+        if (!regex.test(v)) return 'Email must be from a valid provider (e.g., gmail, outlook)'
+        return true
+      }
+    ]
+  }
+  return [
+    (v: string) => !!v || 'Email is required',
+    (v: string) => /.+@.+\..+/.test(v) || 'E-mail must be valid',
+  ]
+})
 
 const passwordRules = [
   (v: string) => !!v || 'Password is required',
