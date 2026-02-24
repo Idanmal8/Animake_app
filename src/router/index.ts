@@ -4,3 +4,4 @@ export { default as VideoChatView } from '../views/video_creation/VideoChatView.
 export { default as SpritePreview } from '../views/sprite_preview/SpritePreview.vue'
 export { default as CorporateSite } from '../views/corporate_site/CorporateSite.vue'
 export { default as TermsAndConditions } from '../views/terms/TermsAndConditions.vue'
+export { default as EmailReachOutView } from '../views/reachout/EmailReachOutView.vue'

@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   // Set the third parameter to '' to load all env regardless of the `VITE_` prefix.
   const env = loadEnv(mode, process.cwd(), '')
 
-  const useLocalApi = env.VITE_USE_LOCAL_API === 'false'
+  const useLocalApi = env.VITE_USE_LOCAL_API === 'true'
   const target = useLocalApi
     ? 'http://localhost:3000'
     : 'https://animake-api-997459958439.europe-west1.run.app'

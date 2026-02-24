@@ -37,6 +37,11 @@ const router = createRouter({
       name: 'terms',
       component: routes.TermsAndConditions,
     },
+    {
+      path: '/reach-out',
+      name: 'reach-out',
+      component: routes.EmailReachOutView,
+    },
   ],
 })
 

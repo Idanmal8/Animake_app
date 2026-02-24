@@ -81,6 +81,10 @@ onMounted(() => {
                     :title="isAuthenticated ? 'Go to Animator' : 'Try It Free'" 
                     @click="handleTryIt"
                  />
+                 <AppButton 
+                    title="Send Ticket" 
+                    @click="router.push({ name: 'reach-out' })"
+                 />
             </nav>
         </header>
 
@@ -208,6 +212,16 @@ onMounted(() => {
              color: hsl(var(--muted-foreground));
              margin-bottom: 2.5rem;
              line-height: 1.6;
+        }
+
+        .corporate-site__cta {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+
+            @media (min-width: 900px) {
+                justify-content: flex-start;
+            }
         }
     }
     
