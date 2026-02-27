@@ -67,5 +67,5 @@ export interface LemonSqueezyProductResponse {
 export enum SubscriptionType {
   Monthly = '838670',
   Yearly = '838680',
-  Test = '850957',
+  // Test = '850957',
 }

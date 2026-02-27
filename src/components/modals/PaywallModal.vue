@@ -112,7 +112,7 @@ const selectedProductId = ref<string>('')
 watch(() => props.products, (newProducts) => {
     if (newProducts.length > 0 && !selectedProductId.value) {
         // Prefer yearly or test or first
-        const yearly = newProducts.find(p => p.id === SubscriptionType.Yearly || p.id === SubscriptionType.Test)
+        const yearly = newProducts.find(p => p.id === SubscriptionType.Yearly)
         selectedProductId.value = yearly ? yearly.id : newProducts[0]!.id
     }
 }, { immediate: true })
@@ -129,7 +129,7 @@ const close = () => {
 
 const getDurationLabel = (product: LemonSqueezyProductData) => {
     if (product.id === SubscriptionType.Monthly) return '1 Month'
-    if (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) return '12 Months'
+    if (product.id === SubscriptionType.Yearly) return '12 Months'
     return product.attributes.name
 }
 
@@ -137,7 +137,7 @@ const calculateMonthlyPrice = (product: LemonSqueezyProductData) => {
     // This is a rough estimation for display. 
     // Ideally we rely on what the API says or just divideprice
     const price = product.attributes.price / 100
-    if (product.id === SubscriptionType.Yearly || product.id === SubscriptionType.Test) {
+    if (product.id === SubscriptionType.Yearly) {
         return '₪' + (price / 12).toFixed(2)
     }
     return '₪' + price.toFixed(2)
