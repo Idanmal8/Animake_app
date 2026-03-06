@@ -229,18 +229,15 @@ const handleSubscribe = () => {
   }
 
   &__features {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    row-gap: 0.75rem;
-    column-gap: 1rem;
+    display: flex;
+    justify-content: center;
     margin-bottom: 2rem;
     width: 100%;
-    text-align: left;
   }
 
   &__feature {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
     color: hsl(var(--foreground));
