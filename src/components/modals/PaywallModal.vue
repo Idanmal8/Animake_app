@@ -120,7 +120,6 @@ watch(() => props.products, (newProducts) => {
 
 const features = [
   'Unlimited video to sprite',
-  'Better dimension export',
 ]
 
 const close = () => {
