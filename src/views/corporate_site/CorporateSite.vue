@@ -7,10 +7,13 @@ import ThemeToggle from '@/components/buttons/ThemeToggle.vue'
 import { authService } from '@/api/services/auth'
 
 const router = useRouter()
+const isTryingOut = ref(false)
+const isSendingTicket = ref(false)
 
 const isAuthenticated = computed(() => !!localStorage.getItem('token'))
 
 const handleTryIt = async () => {
+    isTryingOut.value = true
     if (isAuthenticated.value) {
         try {
             const response = await authService.refresh()
@@ -18,15 +21,21 @@ const handleTryIt = async () => {
             localStorage.setItem('user', JSON.stringify(response.user))
             router.push({ name: 'home' })
         } catch (error) {
-            // The 401 interceptor in httpClient might already redirect,
-            // but we add this as a fallback safety.
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             router.push({ name: 'login' })
+        } finally {
+            isTryingOut.value = false
         }
     } else {
         router.push({ name: 'login' })
+        isTryingOut.value = false
     }
+}
+
+const handleSendTicket = () => {
+    isSendingTicket.value = true
+    router.push({ name: 'reach-out' })
 }
 
 // ... existing refs and onMounted ...
@@ -75,15 +84,18 @@ onMounted(() => {
                     v-if="!isAuthenticated"
                     title="Sign In" 
                     variant="ghost" 
+                    :loading="isTryingOut"
                     @click="handleTryIt"
                  />
                  <AppButton 
                     :title="isAuthenticated ? 'Go to Animator' : 'Try It Free'" 
+                    :loading="isTryingOut"
                     @click="handleTryIt"
                  />
                  <AppButton 
                     title="Send Ticket" 
-                    @click="router.push({ name: 'reach-out' })"
+                    :loading="isSendingTicket"
+                    @click="handleSendTicket"
                  />
             </nav>
         </header>
@@ -99,6 +111,7 @@ onMounted(() => {
                             title="Start Creating" 
                             color="hsl(var(--primary))" 
                             text-color="hsl(var(--primary-foreground))"
+                            :loading="isTryingOut"
                             width="200px"
                             @click="handleTryIt"
                         />
